@@ -304,8 +304,6 @@ padding:10px 12px;max-height:360px;overflow:auto}
   <div class="cards" id="llm-cards">
     <div class="choice" data-k="local"><b>Локальная</b><small>LM Studio / Bionic / Ollama на этом компьютере. Данные никуда не уходят.</small></div>
     <div class="choice" data-k="maverick"><b>Maverick</b><small>Корпоративный агент по API. Данные остаются в компании.</small></div>
-    <div class="choice" data-k="claude"><b>Claude API</b><small>Лучшее качество. Нужен ключ; переписка уходит во внешний сервис.</small></div>
-    <div class="choice" data-k="claude_code"><b>Claude Code</b><small>По подписке, без API-ключа (нужен установленный Claude Code).</small></div>
   </div>
   <div class="card" style="margin-top:12px">
     <div class="sub" data-k="local">
@@ -317,13 +315,6 @@ padding:10px 12px;max-height:360px;overflow:auto}
         <div><label>Контекст модели, токенов</label><input type="number" id="l-ctx" min="4096" step="1024"></div>
       </div>
       <div class="hint">Для сводок лучше обычная instruct-модель, а не Coder.</div>
-    </div>
-    <div class="sub" data-k="claude">
-      <label>API-ключ <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">где взять</a></label>
-      <input type="password" id="c-key" autocomplete="off">
-      <label>Модель</label>
-      <select id="c-model"><option value="claude-sonnet-5-5">Claude Sonnet 5.5 — баланс</option><option value="claude-haiku-5-5">Claude Haiku 5.5 — быстрее и дешевле</option><option value="claude-opus-5-5">Claude Opus 5.5 — максимум качества</option></select>
-      <div class="msg warn" style="display:block">Переписка уйдёт во внешний сервис. Телефоны, почты и номера карт маскируются, но рабочие чаты отправляйте, только если это разрешено.</div>
     </div>
     <div class="sub" data-k="maverick">
       <label>Тип API</label>
@@ -337,10 +328,6 @@ padding:10px 12px;max-height:360px;overflow:auto}
         <textarea id="m-body"></textarea>
         <label>Где в ответе текст (путь, например choices.0.message.content)</label><input type="text" id="m-path">
       </div>
-    </div>
-    <div class="sub" data-k="claude_code">
-      <label>Команда</label><input type="text" id="cc-cmd">
-      <div class="hint">Claude Code должен быть установлен и вход выполнен (claude в командной строке работает).</div>
     </div>
     <div class="msg" id="llm-msg"></div>
     <div class="actions"><button class="b p" id="llm-btn" onclick="saveLlm()">Сохранить и проверить</button><button class="b" onclick="go('tg')">Дальше →</button></div>
@@ -1649,6 +1636,7 @@ async function setWs() {
 
 // ---------------------------------------------------------------- 2. модель
 function pickLlm(k) {
+  k = ['local', 'maverick'].includes(k) ? k : 'local';
   LLMK = k;
   document.querySelectorAll('#llm-cards .choice').forEach(c => c.classList.toggle('on', c.dataset.k === k));
   document.querySelectorAll('#p-llm .sub').forEach(c => c.classList.toggle('on', c.dataset.k === k));
@@ -1672,10 +1660,8 @@ async function findModels() {
 async function saveLlm() {
   const body = {provider: LLMK};
   if (LLMK === 'local') body.local = {base_url: $('l-url').value, model: $('l-model').value, ctx: $('l-ctx').value};
-  if (LLMK === 'claude') body.claude = {api_key: $('c-key').value, model: $('c-model').value};
   if (LLMK === 'maverick') body.maverick = {style: $('m-style').value, url: $('m-url').value, token: $('m-token').value,
     model: $('m-model').value, body: $('m-body').value, response_path: $('m-path').value};
-  if (LLMK === 'claude_code') body.claude_code = {command: $('cc-cmd').value};
   busy('llm-btn', true, 'Проверяю…'); msg('llm-msg', '');
   try { await api('/api/config/llm', body); const j = await api('/api/llm/test', {});
     msg('llm-msg', `✓ Модель ответила «${j.answer}» за ${j.seconds} с (${j.label})`, 'ok'); await refresh();
@@ -2002,10 +1988,8 @@ function fillForms() {
   pickLlm(l.provider || 'local');
   $('l-url').value = l.local.base_url; $('l-ctx').value = l.local.ctx;
   if (l.local.model && l.local.model !== 'auto') { const s = $('l-model'); if (![...s.options].some(o => o.value === l.local.model)) s.add(new Option(l.local.model, l.local.model)); s.value = l.local.model; }
-  $('c-model').value = l.claude.model; $('c-key').placeholder = l.claude.api_key_set ? '•••••• сохранён (оставьте пустым)' : 'sk-ant-…';
   $('m-style').value = l.maverick.style; $('m-url').value = l.maverick.url; $('m-model').value = l.maverick.model;
   $('m-token').placeholder = l.maverick.token_set ? '•••••• сохранён' : ''; $('m-body').value = l.maverick.body; $('m-path').value = l.maverick.response_path; mvStyle();
-  $('cc-cmd').value = l.claude_code.command;
   const t = CFG.telegram || {};
   $('t-id').value = t.api_id; $('t-phone').value = t.phone; $('t-proxies').value = (t.proxies || []).join('\n'); $('t-direct').checked = t.try_direct; $('t-egress').value = t.web_egress || 'auto';
   const v = t.vpn || {}; $('t-vpn-src').value = v.source || ''; $('t-vpn-on').checked = !!v.enabled; loadVpn(v.selected || 'auto');
