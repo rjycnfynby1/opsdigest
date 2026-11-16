@@ -1,0 +1,56 @@
+/* Shared working-tool layer. Canonical roles: DESIGN.md. */
+:root{--ui-space:8px;--ui-pad:24px;--ui-control:40px;--ui-radius:8px;--ui-focus:var(--acc);--ui-field-border:#77808e;--ui-micro:120ms;--ui-press:80ms}
+:where(button,input,select,textarea,summary,a){scroll-margin:16px}
+:where(button,input,select,textarea){font-family:inherit}
+:where(button,summary){cursor:pointer}
+:where(button:not(.ib),input:not([type=checkbox]):not([type=radio]),select){min-height:var(--ui-control)}
+:where(input,select,textarea){max-width:100%;min-width:0}
+input:not([type=checkbox]):not([type=radio]),select,textarea{border-color:var(--ui-field-border)}
+input:not([type]),input[type=url],input[type=email],input[type=search]{width:100%;font:inherit;font-size:14px;color:var(--ink);background:var(--card);border:1px solid var(--ui-field-border);border-radius:var(--ui-radius);padding:8px 10px}
+input[type=datetime-local]{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--ui-field-border);border-radius:var(--ui-radius);padding:8px}
+:where(button,input,select,textarea,summary,a):focus-visible{outline:3px solid var(--ui-focus)!important;outline-offset:2px}
+.sw:has(input:focus-visible){outline:3px solid var(--ui-focus);outline-offset:2px;border-radius:var(--ui-radius)}
+button{transition:background-color var(--ui-micro),border-color var(--ui-micro),box-shadow var(--ui-micro)}
+@media(hover:hover){button:hover:not(:disabled){filter:brightness(.96)}}
+button:active:not(:disabled){box-shadow:inset 0 0 0 2px currentColor;filter:brightness(.94)}
+button:disabled{cursor:not-allowed}
+button[aria-busy=true]{cursor:progress}
+.row{flex-wrap:wrap;gap:var(--ui-space)}
+.row>*{min-width:0}
+.actions{gap:var(--ui-space)}
+.card{overflow-wrap:anywhere}
+.card h2{font-size:17px;margin:0 0 10px}
+.as-kinds{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))}
+.as-kinds button{min-width:0;white-space:normal;padding:6px}
+.msg{overflow-wrap:anywhere}
+.modes{flex-wrap:wrap}
+header{flex-wrap:wrap}
+header .ws{min-width:0}
+.src-cards{grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
+.grid2{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+#rpa-queue:empty::before{content:'В очереди пока нет заданий. Добавьте инциденты или выгрузку проблем.';display:block;color:var(--muted);padding:12px 0}
+#rpa-queue li{padding:8px 0;overflow-wrap:anywhere}
+#rpa-queue button{margin:4px}
+@media(max-width:760px){
+ :root{--ui-pad:16px;--ui-control:44px}
+ section,.main.mode-digest>section,.main.mode-rpa>section,.main.mode-gl>section{padding:var(--ui-pad) var(--ui-pad) 32px}
+ header{padding:12px 16px;gap:8px}
+ header .modes{order:3;flex-basis:100%;gap:4px}
+ header .modes button{white-space:normal;flex:1 1 auto}
+ .row>*{flex-basis:100%}
+ .row>.fit{flex-basis:auto}
+ .card{padding:16px}
+ button.b{white-space:normal;max-width:100%}
+ .actions>*{flex:1 1 auto}
+ .src-cards,.grid2{grid-template-columns:minmax(0,1fr)}
+ .main{flex-direction:column}
+ .main>nav{width:100%;max-height:132px;display:flex;flex-wrap:wrap;gap:4px;padding:8px 16px;border-right:0;border-bottom:1px solid var(--line);flex-shrink:0}
+ nav button{width:auto;flex:0 0 auto;padding:8px;font-size:13px;margin:0}
+ nav .t{display:block}
+ nav .n,nav .opt,nav hr{display:none}
+ header .modes{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
+ header .modes button{min-width:0;padding:8px;font-size:13px}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}
+}

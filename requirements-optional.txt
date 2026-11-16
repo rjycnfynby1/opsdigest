@@ -1,0 +1,3 @@
+# По желанию:
+# config.toml на Python 3.10 (окну не нужно)
+tomli; python_version < "3.11"

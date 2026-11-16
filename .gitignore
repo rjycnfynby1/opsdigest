@@ -1,0 +1,53 @@
+__pycache__/
+*.pyc
+rpa_profile/
+rpa_errors/
+network_log*.jsonl
+scout_report.txt
+tickets.json
+opsdigest_output/
+run_debug.log
+run_debug_err.log
+run_export.log
+run_search.log
+
+# --- Чувствительные данные компании (запрещено выносить в git) ---
+search_results.json
+view_fields.json
+view_fields_scout.txt
+view_fields_screenshot.png
+fields_check_report.json
+fields_check_report.txt
+
+# --- Секреты и конфигурация ---
+.env
+config.toml
+config.json
+
+# --- Бинарные пакеты ---
+wheels/
+*.whl
+
+# --- Лог-файлы (catch-all) ---
+*.log
+*.log.*
+
+# --- Кэши и временные файлы ---
+*.tmp
+*.bak
+
+# Local development and OpsDigest workspace data
+.venv/
+.pytest_cache/
+.pytest_tmp*/
+.aider*
+Claude outputs/
+data/
+reports/
+media/
+*.session
+*.session-journal
+local_ai/tasks/
+local_ai/agent/*.txt
+local_ai/agent/*.json
+local_ai/agent/restart.flag

@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpsDigest</title>
+<link rel="icon" href="data:,">
+<script>try{const t=localStorage.getItem('od_theme')||'auto';document.documentElement.dataset.theme=t==='auto'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t}catch(e){document.documentElement.dataset.theme='light'}</script>
+<link rel="stylesheet" href="/static/messenger.css">
+<link rel="stylesheet" href="/static/modules.css">
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--ink:#16181d;--muted:#5d6472;--line:#e1e4e9;--acc:#0f766e;--acc-ink:#fff;--acc-soft:#e6f4f2;
+--bad:#b42318;--bad-soft:#fdecea;--warn:#a16207;--warn-soft:#fdf6e3;--ok:#15803d;--ok-soft:#e8f5ec;--code:#f3f4f6}
+:root[data-theme=dark]{--bg:#111316;--card:#1a1d22;--ink:#e8eaee;--muted:#9aa1ad;--line:#2b2f36;--acc:#2dd4bf;
+--acc-ink:#062a26;--acc-soft:#123330;--bad:#f87171;--bad-soft:#3a1717;--warn:#facc15;--warn-soft:#332b10;--ok:#4ade80;--ok-soft:#12301d;--code:#23262c;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;padding:10px 18px;background:var(--card);border-bottom:1px solid var(--line)}
+header .logo{font-weight:700;font-size:17px;letter-spacing:-.01em}
+header .logo span{color:var(--acc)}
+header .ws{color:var(--muted);font-size:12px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.main{flex:1;display:flex;min-height:0}
+nav{width:230px;flex:none;padding:14px 10px;border-right:1px solid var(--line);background:var(--card);overflow:auto}
+nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;font-size:14px;color:var(--ink);
+background:none;border:0;border-radius:8px;padding:8px 10px;cursor:pointer;margin-bottom:2px}
+nav button:hover{background:var(--bg)}
+nav button.on{background:var(--acc-soft);color:var(--acc);font-weight:600}
+nav .n{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;
+border:1.5px solid var(--line);color:var(--muted)}
+nav button.done .n{background:var(--ok);border-color:var(--ok);color:#fff}
+nav .opt{font-size:11px;color:var(--muted);font-weight:400;display:block}
+nav hr{border:0;border-top:1px solid var(--line);margin:10px 4px}
+section{flex:1;overflow:auto;padding:22px 26px 60px;min-width:0}
+.page{display:none;width:100%}
+.page .lead{max-width:120ch}
+.page.on{display:block}
+h1{font-size:22px;margin:0 0 4px;letter-spacing:-.01em}
+.lead{color:var(--muted);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:15px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input[type=text],input[type=password],input[type=date],input[type=time],input[type=number],select,textarea{width:100%;font:inherit;font-size:14px;
+color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{min-height:70px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:13px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--acc-soft);border-color:var(--acc)}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{flex:1}
+.row>.fit{flex:none}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:0 14px}
+@media (max-width:760px){nav{width:64px}nav .t{display:none}.grid2{grid-template-columns:1fr}}
+button.b{font:inherit;font-size:14px;border-radius:8px;padding:8px 16px;cursor:pointer;border:1px solid var(--line);
+background:var(--card);color:var(--ink);white-space:nowrap}
+button.b:hover{border-color:var(--acc)}
+button.p{background:var(--acc);border-color:var(--acc);color:var(--acc-ink);font-weight:600}
+button.b:disabled{opacity:.55;cursor:default}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;align-items:center}
+.msg{font-size:14px;margin-top:10px;padding:8px 12px;border-radius:8px;display:none;white-space:pre-wrap}
+.msg.ok{display:block;background:var(--ok-soft);color:var(--ok)}
+.msg.bad{display:block;background:var(--bad-soft);color:var(--bad)}
+.msg.info{display:block;background:var(--acc-soft);color:var(--acc)}
+.msg.warn{display:block;background:var(--warn-soft);color:var(--warn)}
+.hint{font-size:13px;color:var(--muted);margin-top:6px}
+.hint a,.lead a{color:var(--acc)}
+ol.steps{margin:6px 0 0;padding-left:20px;font-size:14px}ol.steps li{margin:3px 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.choice{border:1.5px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;background:var(--card)}
+.choice:hover{border-color:var(--acc)}
+.choice.on{border-color:var(--acc);background:var(--acc-soft)}
+.choice b{display:block;font-size:14px}
+.choice small{color:var(--muted);font-size:12px;line-height:1.35;display:block;margin-top:3px}
+.sub{display:none}.sub.on{display:block}
+.log{background:var(--code);border-radius:8px;padding:10px 12px;font:12px/1.5 ui-monospace,Consolas,monospace;max-height:260px;
+overflow:auto;white-space:pre-wrap;margin-top:12px;display:none}
+.log.on{display:block}
+.vc-meter{display:none;margin:8px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
+.vc-meter.on{display:block}.vc-mh{display:flex;gap:10px;align-items:center}.vc-mh b{flex:1;font-weight:600}
+.vc-mh span{color:var(--muted);font-size:13px;white-space:nowrap}
+.vc-bar{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:8px}
+.vc-bar.vc-all{height:5px;margin-top:4px}.vc-bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .4s}
+.vc-bar.vc-all i{background:var(--acc);opacity:.55}.vc-bar.indet i{width:30%!important;animation:vcind 1.4s ease-in-out infinite}
+@keyframes vcind{0%{margin-left:-30%}100%{margin-left:100%}}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;
+animation:sp 1s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-weight:500;position:sticky;top:0;background:var(--card)}
+td select{padding:4px 6px;font-size:13px;width:auto;min-width:96px}
+.tablewrap{max-height:calc(100vh - 300px);min-height:200px;overflow:auto;margin-top:10px}
+.pill{font-size:11px;padding:1px 8px;border-radius:999px;background:var(--bg);color:var(--muted);white-space:nowrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;flex-wrap:wrap}
+.seg button{font:inherit;font-size:14px;border:0;background:var(--card);color:var(--ink);padding:8px 14px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--acc);color:var(--acc-ink);font-weight:600}
+.rep{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.rep:first-child{border-top:0}
+.rep .when{flex:none;width:120px;font-size:13px;color:var(--muted)}
+.rep .what{flex:1;font-size:14px}
+.result{border-left:4px solid var(--acc)}
+.answer{white-space:pre-wrap;font-size:14px;margin-top:10px}
+.comp{display:grid;grid-template-columns:1fr 1.6fr 1.6fr auto;gap:6px;margin-bottom:6px}
+.x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:18px}
+.check{display:flex;gap:8px;align-items:center;font-size:14px;margin-top:10px;color:var(--ink)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.38);display:none;place-items:center;z-index:50}
+.modal.on{display:grid}
+.mbox{background:var(--card);border-radius:14px;width:min(1000px,94vw);height:min(760px,92vh);display:flex;flex-direction:column;
+padding:16px 18px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.mhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}.mhead b{flex:1;font-size:16px}
+.places{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.places button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 12px;cursor:pointer}
+.places button:hover{border-color:var(--acc)}
+.fslist{flex:1;overflow:auto;border:1px solid var(--line);border-radius:10px;margin-top:8px}
+.fslist div{padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--line);font-size:14px;display:flex;gap:8px}
+.fslist div:hover{background:var(--acc-soft)}
+.fslist .empty{cursor:default;color:var(--muted)}
+.fslist .empty:hover{background:none}
+.check input{width:16px;height:16px}
+.mbox hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+.mbox.auto{height:auto;max-height:92vh;overflow:auto}
+td .lnk{border:0;background:none;color:var(--acc);cursor:pointer;font:inherit;font-size:13px;padding:0}
+td.num{text-align:right;color:var(--muted);white-space:nowrap}
+tr.excl td{opacity:.55}
+tr.draft td{background:color-mix(in srgb,var(--warn-soft) 40%,transparent)}
+nav .n.q{background:var(--warn);border-color:var(--warn);color:#fff}
+.glq{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px}
+.glq .chips button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:3px 10px;cursor:pointer}
+.glq .chips button:hover{border-color:var(--acc);color:var(--acc)}
+.gl-wiki{white-space:pre-wrap;font-size:13.5px;color:var(--ink);background:var(--bg);border-radius:8px;padding:8px 10px;margin-top:6px;max-height:260px;overflow:auto}
+td.gl-sum{max-width:560px}
+.gls{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:8px}
+.gls-h{display:flex;align-items:center;justify-content:space-between}
+.gls textarea{min-height:52px;font-family:inherit;font-size:14px;margin:4px 0}
+#gl-modal .mbox{width:min(1000px,96vw);height:92vh}
+.desc-mark{color:var(--acc);font-size:12px;margin-left:4px}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.thumbs figure{margin:0;width:150px}
+.thumbs img{width:150px;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--line);display:block}
+.thumbs figcaption{font-size:12px;color:var(--muted);line-height:1.3;margin-top:3px}
+.thumbs figure{position:relative}
+.thumbs figure .tb{position:absolute;top:4px;right:4px;border:0;border-radius:6px;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;font-size:13px;padding:1px 7px}
+.need{margin-top:10px;font-size:14px}
+#lock{position:fixed;inset:0;background:var(--bg);z-index:100;display:none;place-items:center;padding:20px;overflow:auto}
+#lock.on{display:grid}
+#lock .lbox{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 28px;width:min(460px,94vw);
+box-shadow:0 20px 60px rgba(0,0,0,.12)}
+#lock h2{margin:0 0 6px;font-size:20px}
+#lock .sub{display:none}#lock .sub.on{display:block}
+#lock input.pin{font-size:28px;letter-spacing:.5em;text-align:center;font-family:ui-monospace,Consolas,monospace}
+.rcode{font:600 18px ui-monospace,Consolas,monospace;letter-spacing:.02em;white-space:nowrap;background:var(--code);border-radius:10px;
+padding:14px;text-align:center;margin:12px 0;user-select:all}
+.tg-banner{background:var(--warn-soft);color:var(--warn);padding:8px 18px;font-size:14px;display:none}
+.tg-banner.on{display:block}
+.link-banner{display:none;padding:7px 18px;font-size:14px;align-items:center;gap:8px}
+.link-banner.on{display:flex}.link-banner.warn{background:var(--warn-soft);color:var(--warn)}
+.link-banner.ok{background:var(--ok-soft);color:var(--ok)}.link-banner.bad{background:var(--bad-soft);color:var(--bad)}
+.link-banner .lnk{border:0;background:none;color:inherit;text-decoration:underline;cursor:pointer;font:inherit}
+#tk-btn .cnt{display:none;margin-left:6px;min-width:18px;height:18px;border-radius:9px;background:var(--acc);color:var(--acc-ink);
+font-size:11.5px;font-weight:600;padding:0 5px;line-height:18px;text-align:center}
+#tk-btn.has .cnt{display:inline-block}
+.tk-row{display:flex;gap:12px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line)}
+.tk-row:last-child{border-bottom:0}
+.tk-ic{font-size:20px;width:28px;text-align:center;flex:none}
+.tk-b{flex:1;min-width:0}.tk-b b{font-weight:600;margin-right:8px}
+.tk-b small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px;overflow-wrap:anywhere}
+.tk-a{display:flex;gap:6px;flex:none}.tk-a button.b{padding:5px 10px;font-size:13px}
+.pill.tk-ok{background:var(--ok-soft);color:var(--ok)}.pill.tk-warn{background:var(--warn-soft);color:var(--warn)}
+.pill.tk-info{background:var(--acc-soft);color:var(--acc)}
+.tk-set{display:flex;gap:8px;align-items:flex-start;font-size:14px;margin-top:8px}
+.tk-set input{margin-top:4px}
+.tk-set .pill:empty{display:none}
+.tk-now{margin:6px 0 4px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg2,transparent)}
+.tk-now:empty{display:none}.tk-now b{font-weight:600}.tk-now .tk-j{display:inline-block;margin:2px 8px 2px 0;font-size:13px}
+.tk-sleep{font-size:12.5px;color:var(--muted);margin-top:4px}.tk-sleep:empty{display:none}
+.tk-sel{margin-left:6px;padding:2px 6px;font-size:13px}
+/* раздел «Чаты» */
+.ch-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.ch-top .seg button{padding:7px 14px}
+.ch-grid{display:flex;gap:14px;min-height:0}
+.ch-folders{width:190px;flex:none;display:flex;flex-direction:column;gap:2px;max-height:calc(100vh - 230px);overflow:auto}
+.ch-folders button{display:flex;gap:6px;align-items:center;text-align:left;font:inherit;font-size:14px;border:0;background:none;color:var(--ink);
+border-radius:8px;padding:7px 10px;cursor:pointer}
+.ch-folders button span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ch-folders button small{color:var(--muted);font-size:12px}
+.ch-folders button:hover{background:var(--bg)}.ch-folders button.on{background:var(--acc-soft);color:var(--acc);font-weight:600}
+.ch-main{flex:1;min-width:0}
+.ch-filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ch-filters input[type=text]{flex:1 1 260px;width:auto}
+.ch-filters select{width:auto;flex:none;padding:7px 8px;font-size:13px}
+.ch-bulk{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:6px 8px;background:var(--bg);border-radius:8px;font-size:13px}
+.ch-bulk b{margin-right:4px}
+.ch-bulk select{width:auto;padding:4px 6px;font-size:13px}
+.ch-bulk button.b{padding:4px 10px;font-size:13px}
+#ch-saved{color:var(--ok);font-size:13px;transition:opacity .4s;opacity:0}
+tr.sel td{background:var(--acc-soft)}
+td.cb,th.cb{width:28px;text-align:center}
+td.ttl{min-width:220px}
+td.ttl .lnk{text-align:left;font-weight:500}
+th[data-sort]{cursor:pointer;user-select:none}th[data-sort]:hover{color:var(--acc)}
+.mk{color:var(--acc);font-size:12px;margin-left:5px;cursor:help}.mk.ai{color:#7c3aed}
+[data-theme=dark] .mk.ai{color:#c4b5fd}
+.cm-tabs{margin:2px 0 10px}
+.cm-pane{display:none;flex:1;min-height:0;overflow:auto}.cm-pane.on{display:block}
+#chat-modal .mbox,#person-modal .mbox{width:min(1180px,96vw);height:92vh}
+textarea.desc{font-family:inherit;font-size:14px;min-height:110px}
+.ed2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px}
+.tplb{border:0;background:none;color:var(--acc);font:inherit;font-size:12px;cursor:pointer;padding:0 0 0 8px}
+.tpl-menu{position:fixed;z-index:85;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.2);
+width:370px;max-height:360px;overflow:auto;display:none}
+.tpl-menu.on{display:block}
+.tpl-h{font-size:12px;color:var(--muted);font-weight:600;padding:8px 10px 4px;text-transform:uppercase;letter-spacing:.03em}
+.tpl-i{padding:6px 28px 6px 10px;cursor:pointer;position:relative;border-top:1px solid var(--line)}
+.tpl-i:hover{background:var(--acc-soft)}
+.tpl-i b{display:block;font-size:13px}.tpl-i span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px;color:var(--muted)}
+.tpl-i .x{position:absolute;right:4px;top:4px;font-size:16px}
+.tpl-f{padding:8px 10px;border-top:1px solid var(--line)}
+.chipb{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:3px 10px;cursor:pointer;margin:2px}
+.chipb:hover{border-color:var(--acc)}
+td.role{max-width:340px;font-size:12.5px}
+pre.sent{white-space:pre-wrap;font:12px/1.45 ui-monospace,Consolas,monospace;background:var(--code);border-radius:8px;
+padding:10px 12px;max-height:360px;overflow:auto}
+</style>
+<link rel="stylesheet" href="/static/design-system.css">
+</head>
+<body>
+<header>
+  <div class="logo">Ops<span>Digest</span></div>
+  <div class="modes" id="modes" style="display:none"><button id="mode-mx" data-m="mx" onclick="setMode('mx')" title="Чаты Telegram и ИИ в чате">💬 Мессенджер</button><button id="mode-digest" data-m="digest" onclick="setMode('digest')" title="Сводки за период: Telegram, почта, ITSM, вики">★ Сводка</button><button id="mode-rpa" data-m="rpa" onclick="setMode('rpa')" title="Очереди выгрузок инцидентов и проблем">⇩ RPA</button><button id="mode-asst" data-m="asst" onclick="setMode('asst')" title="Отдельный чат с ИИ по всем источникам, история запросов">✦ Ассистент</button><button id="mode-gl" data-m="gl" onclick="setMode('gl')" title="Термины, очередь терминов и вопросы к вам">📖 Глоссарий<span class="cnt" id="gl-tab-cnt"></span></button><button id="mode-set" data-m="set" onclick="setMode('set')" title="Настройка программы, источники, разделы, защита, диагностика">⚙ Настройки</button></div>
+  <div class="ws" id="hdr-ws"></div>
+  <div class="src-pills" id="src-pills" title="Плагины Maverick: почта, ITSM, вики, Rooms, трекер, встречи — нажмите, чтобы открыть настройки источников"></div>
+  <button class="b ib-theme" id="theme-btn" onclick="themeCycle()" title="Тема: как в системе / светлая / тёмная">🌓</button>
+  <button class="b" id="tk-btn" onclick="tasksOpen()" title="Долгие задачи: выгрузка истории, ИИ-описания… Программа доводит их до конца сама">⏳ Задачи<span class="cnt"></span></button>
+  <button class="b" id="upd-btn" onclick="updOpen()" title="Обновить программу до последней версии из GitHub">⟳ Обновить<span class="dot"></span></button>
+  <button class="b" id="lock-btn" onclick="lockNow()" title="Закрыть окно ПИН-кодом (как в Telegram)" style="display:none">🔒 Заблокировать</button>
+  <button class="b" onclick="quit()" title="Закрыть программу">Выход</button>
+</header>
+<div class="link-banner" id="link-banner"></div>
+<div class="tg-banner" id="tg-banner">Пароль верный. Чтобы открыть переписку и отчёты, войдите в Telegram (шаг «Вход») —
+без входа в учётку, под которой включали защиту, данные не показываются.</div>
+<div class="main">
+<nav id="nav">
+  <button data-p="ws"><span class="n">1</span><span class="t">Папка</span></button>
+  <button data-p="llm"><span class="n">2</span><span class="t">Модель</span></button>
+  <button data-p="tg"><span class="n">3</span><span class="t">Telegram</span></button>
+  <button data-p="login"><span class="n">4</span><span class="t">Вход</span></button>
+  <button data-p="profile"><span class="n">5</span><span class="t">О себе<span class="opt">можно позже</span></span></button>
+  <button data-p="chats"><span class="n">6</span><span class="t">Чаты<span class="opt">можно позже</span></span></button>
+  <hr>
+  <button data-p="rpa"><span class="n">⇩</span><span class="t">Выгрузки RPA</span></button>
+  <button data-p="src"><span class="n">⇄</span><span class="t">Источники<span class="opt">почта, ITSM, вики, Rooms, трекер, встречи</span></span></button>
+  <button data-p="creds"><span class="n">🔑</span><span class="t">Учётные данные<span class="opt">логины, пароли, токены</span></span></button>
+  <button data-p="voice"><span class="n">🎤</span><span class="t">Голосовой ввод<span class="opt">локальная модель</span></span></button>
+  <button data-p="mods"><span class="n">▦</span><span class="t">Разделы и тема<span class="opt">что показывать вверху</span></span></button>
+  <button data-p="sec"><span class="n">🔒</span><span class="t">Защита</span></button>
+  <button data-p="diag"><span class="n">?</span><span class="t">Диагностика</span></button>
+</nav>
+<section>
+<div class="page" id="p-rpa">
+<h1>Выгрузки RPA</h1><p>Задания выполняются последовательно. При ошибке очередь останавливается. Войдите в портал в открывшемся браузере заранее.</p>
+<div class="card"><label>Портал<input id="rpa-url" type="url" placeholder="https://itsm.example.com/"></label><label for="rpa-channel">Браузер для выгрузок</label><select id="rpa-channel"><option value="chrome">Chrome</option><option value="msedge">Edge</option></select>
+ </div>
+<div class="card"><h2>Задание: выгрузка инцидентов</h2>
+<p>Для инцидентов задайте номер либо дату «после». Граница «до» необязательна. Время передаётся в портал без преобразования часового пояса; если портал его изменит, поиск будет отменён.</p>
+<div id="rpa-fields" class="cards"></div><div id="rpa-statuses"></div>
+<button class="b" onclick="rpaAdd()">Добавить инциденты в очередь</button></div>
+<div class="card"><h2>Задание: выгрузка проблем</h2>
+<p>Выгружается вся очередь проблем. Это отдельное задание: его можно запускать самостоятельно или вместе с заданиями инцидентов, меняя порядок в списке ниже.</p>
+<button class="b" onclick="rpaAddProblems()">Добавить выгрузку всех проблем в очередь</button></div>
+<h2>Очередь заданий</h2>
+<ol id="rpa-queue"></ol><label for="rpa-name">Имя шаблона</label><input id="rpa-name" placeholder="Например: Утренние инциденты"><button class="b" onclick="rpaSave()">Сохранить шаблон</button>
+<label for="rpa-templates">Сохранённые шаблоны</label><select id="rpa-templates" onchange="if(this.value){RPA.items=structuredClone(RPA.templates[this.value]);rpaRender()}"></select>
+<button class="b p" id="rpa-run" onclick="rpaRun()">Запустить очередь</button>
+<button class="b" id="rpa-analyze" onclick="rpaAnalyze()" disabled>Передать выгрузки в сводку</button>
+<div class="card"><h3>Конструктор сценариев</h3>
+<button class="b p" onclick="if(window.chrome?.webview){window.chrome.webview.postMessage({kind:'rpa-open'})}else{alert('Запустите OpsDigest-Embedded.bat для встроенного конструктора')}">Создать / открыть сценарий</button>
+<p>Панель браузера открывается только по этой кнопке. Выберите элемент через Alt + клик, добавьте действие в сценарий и сохраните его.</p>
+<details><summary>Прежний разведчик в отдельном окне</summary>
+<p>Откройте портал по адресу выше, войдите вручную и нажмите «Исследовать». Чтение страницы может содержать персональные данные. Снимки не сохраняются.</p>
+<button onclick="rpaExplore('open')">Открыть браузер</button>
+<button onclick="rpaExplore('scan')">Исследовать / обновить</button>
+<button onclick="rpaExplore('close')">Закрыть браузер разведки</button>
+<div id="rpa-explorer" style="max-height:500px;overflow:auto" aria-live="polite"></div></details></div>
+<pre id="rpa-result" role="log" aria-live="polite" style="white-space:pre-wrap;max-height:420px;overflow:auto"></pre>
+</div>
+
+<!-- 1. Папка -->
+<div class="page" id="p-ws">
+  <h1>Рабочая папка</h1>
+  <p class="lead">Здесь будут храниться настройки, переписка (локальная база) и отчёты. Выберите существующую папку или создайте новую — кнопкой «Создать папку» в окне выбора.</p>
+  <div class="card">
+    <label>Папка</label>
+    <div class="row"><input type="text" id="ws-path" placeholder="C:\Users\…\OpsDigest"><button class="b fit" onclick="pickFolder()">Выбрать…</button></div>
+    <div class="hint" id="ws-suggest"></div>
+    <div class="msg" id="ws-msg"></div>
+    <div class="actions"><button class="b p" onclick="setWs()">Использовать эту папку</button></div>
+  </div>
+  <div class="hint">Не выбирайте папку внутри OneDrive и не открывайте к ней общий доступ: в ней будет доступ к вашему Telegram.</div>
+</div>
+
+<!-- 2. Модель -->
+<div class="page" id="p-llm">
+  <h1>Модель для сводок</h1>
+  <p class="lead">Чем обрабатывать переписку. Можно поменять в любой момент.</p>
+  <div class="cards" id="llm-cards">
+    <div class="choice" data-k="local"><b>Локальная</b><small>LM Studio / Bionic / Ollama на этом компьютере. Данные никуда не уходят.</small></div>
+    <div class="choice" data-k="maverick"><b>Maverick</b><small>Корпоративный агент по API. Данные остаются в компании.</small></div>
+    <div class="choice" data-k="claude"><b>Claude API</b><small>Лучшее качество. Нужен ключ; переписка уходит во внешний сервис.</small></div>
+    <div class="choice" data-k="claude_code"><b>Claude Code</b><small>По подписке, без API-ключа (нужен установленный Claude Code).</small></div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="sub" data-k="local">
+      <label>Адрес сервера модели</label>
+      <div class="row"><input type="text" id="l-url"><button class="b fit" onclick="findModels()">Найти модели</button></div>
+      <div class="hint">LM Studio / Bionic: вкладка Developer → Start Server (у вас обычно порт 1235). Ollama: http://localhost:11434/v1</div>
+      <div class="grid2">
+        <div><label>Модель</label><select id="l-model"><option value="auto">автоматически (загруженная)</option></select></div>
+        <div><label>Контекст модели, токенов</label><input type="number" id="l-ctx" min="4096" step="1024"></div>
+      </div>
+      <div class="hint">Для сводок лучше обычная instruct-модель, а не Coder.</div>
+    </div>
+    <div class="sub" data-k="claude">
+      <label>API-ключ <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">где взять</a></label>
+      <input type="password" id="c-key" autocomplete="off">
+      <label>Модель</label>
+      <select id="c-model"><option value="claude-sonnet-5-5">Claude Sonnet 5.5 — баланс</option><option value="claude-haiku-5-5">Claude Haiku 5.5 — быстрее и дешевле</option><option value="claude-opus-5-5">Claude Opus 5.5 — максимум качества</option></select>
+      <div class="msg warn" style="display:block">Переписка уйдёт во внешний сервис. Телефоны, почты и номера карт маскируются, но рабочие чаты отправляйте, только если это разрешено.</div>
+    </div>
+    <div class="sub" data-k="maverick">
+      <label>Тип API</label>
+      <select id="m-style" onchange="mvStyle()"><option value="agent">Maverick Agent Core — обычный вариант (ключ sk_…)</option><option value="openai">OpenAI-совместимый (/v1/chat/completions)</option><option value="custom">Свой формат (шаблон запроса)</option></select>
+      <label id="m-url-l">Адрес Maverick</label><input type="text" id="m-url" placeholder="https://maverick.company.ru">
+      <div class="grid2"><div><label id="m-token-l">API-ключ</label><input type="password" id="m-token" autocomplete="off"></div>
+      <div id="m-model-box"><label>Модель (если нужно)</label><input type="text" id="m-model"></div></div>
+      <div class="hint" id="m-agent-hint">Ключ: веб-интерфейс Maverick → «API-ключи» → «Создать ключ» (например, с названием opsdigest). Адрес — только адрес сайта, без /api/…; модель выбирать не нужно. Каждый запрос программы появится у вас в Maverick отдельной сессией.</div>
+      <div id="m-custom" style="display:none">
+        <label>Шаблон тела запроса (JSON). Подстановки: {{prompt}}, {{system}}, {{user}}, {{max_tokens}}</label>
+        <textarea id="m-body"></textarea>
+        <label>Где в ответе текст (путь, например choices.0.message.content)</label><input type="text" id="m-path">
+      </div>
+    </div>
+    <div class="sub" data-k="claude_code">
+      <label>Команда</label><input type="text" id="cc-cmd">
+      <div class="hint">Claude Code должен быть установлен и вход выполнен (claude в командной строке работает).</div>
+    </div>
+    <div class="msg" id="llm-msg"></div>
+    <div class="actions"><button class="b p" id="llm-btn" onclick="saveLlm()">Сохранить и проверить</button><button class="b" onclick="go('tg')">Дальше →</button></div>
+  </div>
+  <div class="card">
+    <h3>Изображения</h3>
+    <div class="hint">Модель читает картинки из переписки — скриншоты ошибок, графики, таблицы, фото документов. Новые изображения
+    обязательно описываются перед каждой сводкой; остальные — по кнопке у чата или когда модель решит, что картинка важна для
+    ответа на вопрос. Описание сохраняется рядом с картинкой (папка media) и повторно не делается.</div>
+    <label>Какая модель описывает изображения</label>
+    <select id="v-prov"></select>
+    <div class="grid2">
+      <div><label>Сколько картинок модель может прочитать при ответе на вопрос</label><input type="number" id="v-auto" min="0" max="50"></div>
+      <div><label>Описывать одновременно</label><input type="number" id="v-workers" min="1" max="8"></div>
+    </div>
+    <div id="v-mav" style="display:none">
+      <label>Maverick: формат запроса с картинкой (если автоподбор не сработал; обычно пусто)</label>
+      <textarea id="v-mav-body" placeholder='{"message": "{{prompt}}", "files": [{"filename": "{{image_name}}", "content": "{{image_base64}}", "content_type": "{{image_mime}}"}]}'></textarea>
+      <div class="hint">Как узнать точный формат: откройте веб-версию Maverick в браузере, нажмите F12 → вкладка «Сеть» (Network),
+      отправьте сообщение с картинкой и найдите запрос — во вкладке «Полезная нагрузка» (Payload) видно, как передаётся файл.
+      Перенесите сюда эту структуру, заменив текст на {{prompt}}, содержимое файла — на {{image_base64}} (или {{image_data_url}}),
+      имя — на {{image_name}}, тип — на {{image_mime}}. Ключ и сам файл сюда не копируйте.</div>
+    </div>
+    <div class="msg" id="v-msg"></div>
+    <div class="actions"><button class="b p" id="v-btn" onclick="testVision()">Сохранить и проверить, видит ли модель картинки</button></div>
+    <div class="log" id="v-log"></div>
+  </div>
+</div>
+
+<!-- 3. Telegram -->
+<div class="page" id="p-tg">
+  <h1>Подключение к Telegram</h1>
+  <p class="lead">Программа читает ваши чаты как ещё одно ваше устройство — только чтение, сообщения не отмечаются прочитанными.</p>
+  <div class="card">
+    <h3>Ключи приложения</h3>
+    <ol class="steps"><li>Откройте <a href="https://my.telegram.org" target="_blank" rel="noopener">my.telegram.org</a> и войдите по номеру телефона (код придёт в Telegram).</li>
+    <li>Раздел <b>API development tools</b>, поля формы:
+      <b>App title</b> — латиницей без пробелов, например <code>OpsDigest</code>;
+      <b>Short name</b> — латинские буквы и цифры, 5–32 символа, например <code>opsdigest2026</code>;
+      <b>URL</b> — пусто; <b>Platform</b> — <b>Desktop</b>; <b>Description</b> — пусто или пара слов латиницей → <b>Create application</b>.</li>
+    <li>Скопируйте сюда <b>App api_id</b> и <b>App api_hash</b>. Если приложение уже создано, сайт сразу покажет их на странице «App configuration» (на номер — одно приложение).</li></ol>
+    <div class="msg warn" style="display:block"><b>Важно: VPN.</b> my.telegram.org сверяет страну IP-адреса со страной номера
+      телефона. Если зайти через VPN другой страны (номер +7, а VPN — Нидерланды), сайт впустит, но на «Create application»
+      ответит просто <b>ERROR</b> — и не объяснит почему. Получайте ключи <b>без VPN</b>: удобнее всего с телефона через мобильный
+      интернет или с домашнего компьютера. Если без VPN сайт не открывается — смените DNS (в браузере: «Безопасный DNS» /
+      «Secure DNS», например Cloudflare 1.1.1.1 или Google 8.8.8.8) или откройте с телефона. Если VPN всё же нужен — только
+      сервер той же страны, что и номер. Подробно — в docs/SETUP.md.</div>
+    <div class="hint">Ещё причины «ERROR»: блокировщик рекламы (отключите для сайта), Short name уже занят или с недопустимыми
+      символами (только латиница и цифры, 5–32), слишком частые попытки — подождите час-другой и попробуйте ещё раз, не меняя
+      полей. «Too many attempts» при входе — тоже подождать. Приложение одно на номер: если оно уже есть, ключи видны сразу.</div>
+    <div class="grid2">
+      <div><label>api_id</label><input type="text" id="t-id" inputmode="numeric"></div>
+      <div><label>api_hash</label><input type="password" id="t-hash" autocomplete="off"></div>
+    </div>
+    <label>Номер телефона</label><input type="text" id="t-phone" placeholder="+79991234567">
+  </div>
+  <div class="card">
+    <h3>Загрузить экспорт Telegram Desktop (вся история)</h3>
+    <div class="hint" style="margin-top:0">Основа базы для поиска и сводок — без подключения к Telegram из этой программы. В Telegram Desktop: <b>Настройки → Продвинутые настройки → Экспорт данных из Telegram</b>:
+    отметьте личные чаты, частные группы (<b>снимите «Только мои сообщения»</b>), частные каналы; фото, видео и файлы — не нужны; формат — <b>«Машиночитаемый JSON»</b>; период — за всё время.
+    Папку экспорта положите в рабочую папку OpsDigest (или оставьте в «Загрузки\Telegram Desktop») и нажмите «Загрузить».<br>
+    Повторная загрузка не создаёт дублей; дальше новое можно выгружать за последние дни — или его догрузит подключение через VPN/прокси. Из публичных групп экспорт Telegram отдаёт только ваши сообщения.</div>
+    <input type="text" id="t-imp-path" placeholder="Путь к папке экспорта — можно не указывать, если она в рабочей папке">
+    <div class="msg" id="imp-msg"></div>
+    <div class="log" id="imp-log"></div>
+    <div class="actions"><button class="b p" id="imp-btn" onclick="runImport()">Загрузить экспорт</button></div>
+  </div>
+  <div class="card">
+    <h3>VPN по подписке (VLESS)</h3>
+    <div class="hint" style="margin-top:0">Если Telegram в этой сети закрыт и прокси не помогают — подключение через ваш VPN. Вставьте ссылку на подписку (как в Happ: <code>https://…</code>) или ссылки на серверы <code>vless://…</code>, <code>trojan://…</code>, <code>vmess://…</code>, <code>ss://…</code> — по одной в строке.<br>
+    Работает через ядро Xray и только для OpsDigest: остальные программы компьютера через VPN не пойдут. Зашифрованные ссылки Happ (<code>happ://crypt…</code>) открыть нельзя — попросите у провайдера обычную ссылку на подписку.</div>
+    <div class="msg" id="xray-msg"></div>
+    <div class="actions" style="margin-top:8px"><button class="b" id="xray-btn" onclick="installXray(false)">Установить Xray</button></div>
+    <details><summary>Если GitHub с этого компьютера недоступен</summary>
+      <div class="hint">Скачайте в браузере файл <b id="xray-zipname">Xray-windows-64.zip</b> со страницы <a id="xray-rel" href="https://github.com/XTLS/Xray-core/releases" target="_blank">релизов Xray</a> и укажите путь к нему (например, <code>C:\Users\…\Downloads\Xray-windows-64.zip</code>).</div>
+      <input type="text" id="t-xray-zip" placeholder="Полный путь к скачанному архиву Xray (.zip)">
+      <div class="actions"><button class="b" id="xray-zip-btn" onclick="installXray(true)">Установить из файла</button></div>
+    </details>
+    <label>Подписка или ссылки на серверы</label>
+    <textarea id="t-vpn-src" placeholder="https://… (ссылка на подписку) или vless://…"></textarea>
+    <label class="check"><input type="checkbox" id="t-vpn-on"> Подключаться к Telegram через VPN (в первую очередь, прокси ниже — запасные)</label>
+    <div class="msg" id="vpn-msg"></div>
+    <div class="log" id="vpn-log"></div>
+    <div class="tablewrap" id="vpn-wrap" style="display:none"><table><thead><tr><th></th><th>Сервер</th><th>Пинг</th><th>Telegram через сервер</th></tr></thead><tbody id="vpn-body"></tbody></table></div>
+    <div class="actions"><button class="b p" id="vpn-btn" onclick="testVpn()">Загрузить и проверить серверы</button><button class="b" onclick="saveVpn()">Сохранить</button></div>
+  </div>
+  <div class="card">
+    <h3>Прокси</h3>
+    <div class="hint" style="margin-top:0">По одной ссылке в строке. Пробуются по очереди; если связь через один оборвётся — программа переключится на следующий.<br>
+    Подходят ссылки вида <code>tg://proxy?server=…&amp;port=…&amp;secret=…</code>, <code>tg://webproxy?server=…&amp;secret=…</code> (WEB-прокси), <code>https://t.me/proxy?…</code>, <code>socks5://логин:пароль@адрес:порт</code>.</div>
+    <textarea id="t-proxies" placeholder="tg://proxy?server=...&port=443&secret=..."></textarea>
+    <label class="check"><input type="checkbox" id="t-direct"> Если ни один прокси не подошёл — пробовать без прокси</label>
+    <details><summary>Выход в интернет для WEB-прокси</summary>
+      <div class="hint">WEB-прокси работает через обычный HTTPS. «auto» — как браузер: через прокси Windows, если он настроен; «off» — напрямую; или адрес корпоративного прокси: <code>http://адрес:порт</code> (с логином: <code>http://логин:пароль@адрес:порт</code>).</div>
+      <input type="text" id="t-egress" placeholder="auto">
+    </details>
+    <div class="msg" id="tg-msg"></div>
+    <div class="log" id="tg-log"></div>
+    <div class="actions"><button class="b p" onclick="saveTg()">Сохранить</button><button class="b" id="px-btn" onclick="checkProxies()">Проверить связь</button><button class="b" onclick="go('login')">Дальше →</button></div>
+  </div>
+</div>
+
+<!-- 4. Вход -->
+<div class="page" id="p-login">
+  <h1>Вход в Telegram</h1>
+  <p class="lead">Один раз: код придёт в приложение Telegram. После входа программа появится в Настройки → Устройства как «OpsDigest» — оттуда её можно отключить.</p>
+  <div class="card">
+    <div id="login-done" class="msg ok"></div>
+    <label>Номер телефона</label>
+    <div class="row"><input type="text" id="l-phone"><button class="b p fit" id="code-btn" onclick="sendCode()">Получить код</button></div>
+    <div id="code-box" style="display:none">
+      <label>Код из Telegram</label>
+      <div class="row"><input type="text" id="l-code" inputmode="numeric" autocomplete="one-time-code"><button class="b p fit" onclick="signIn()">Войти</button></div>
+    </div>
+    <div id="pwd-box" style="display:none">
+      <label>Облачный пароль (двухэтапная проверка)</label>
+      <div class="row"><input type="password" id="l-pwd"><button class="b p fit" onclick="signIn(true)">Войти</button></div>
+    </div>
+    <div class="msg" id="login-msg"></div>
+  </div>
+  <div class="actions"><button class="b" onclick="go('profile')">Дальше →</button></div>
+</div>
+
+<!-- 5. О себе -->
+<div class="page" id="p-profile">
+  <h1>О себе</h1>
+  <p class="lead">Чтобы сводка понимала, какие вопросы адресованы вам и где вам стоит отреагировать. Можно заполнить позже.</p>
+  <div class="card">
+    <div class="grid2">
+      <div><label>Имя</label><input type="text" id="pr-name" placeholder="Иван Иванов"></div>
+      <div><label>Роль</label><input type="text" id="pr-role" placeholder="Например: специалист поддержки"></div>
+    </div>
+    <label>Как к вам обращаются в чатах (через запятую)</label><input type="text" id="pr-aliases" placeholder="Иван, Ваня, @ivanov">
+    <label>Зона ответственности</label><textarea id="pr-resp" style="font-family:inherit;font-size:14px" placeholder="Темы и обязанности, важные для сводок"></textarea>
+    <label>Компетенции — по ним программа подсвечивает, где вам реагировать</label>
+    <div id="comps"></div>
+    <button class="b" onclick="addComp()">+ Компетенция</button>
+    <label>Что пропускать (через запятую)</label><input type="text" id="pr-ignore" placeholder="поздравления, обеды, мемы">
+    <div class="msg" id="pr-msg"></div>
+    <div class="actions"><button class="b p" onclick="saveProfile()">Сохранить</button><button class="b" onclick="go('chats')">Дальше →</button></div>
+  </div>
+</div>
+
+<!-- 6. Чаты -->
+<div class="page" id="p-chats">
+  <h1>Чаты</h1>
+  <p class="lead">Важность, режим и описание чатов, тем форумов и людей — модель учитывает их в сводках и ответах. Исключённый
+  чат не попадает в сводки, поиск и выгрузку истории. Фильтры и галочки — чтобы настроить сотни чатов разом;
+  «✦ Описать ИИ» — описания, которые вы не успели написать сами (ваше описание остаётся, ИИ пишет ниже).</p>
+  <div class="ch-top"><div class="seg" id="ch-views"><button data-v="chats" class="on">Чаты</button><button data-v="people">Люди<span id="ch-people-n" class="hint"></span></button><button data-v="rules">Правила по названию</button><button data-v="export">Выгрузка истории</button></div>
+    <button class="b" id="chats-btn" onclick="loadChats()">Обновить список из Telegram</button><span id="ch-saved"></span></div>
+  <div class="msg" id="chats-msg"></div>
+
+  <div class="card ch-v" id="ch-v-chats">
+    <div class="ch-grid">
+      <aside class="ch-folders" id="ch-folders"></aside>
+      <div class="ch-main">
+        <div class="ch-filters">
+          <input type="text" id="ch-q" placeholder="Название содержит… (через запятую — любое из слов: авария, инцидент)" autocomplete="off">
+          <select id="ch-qmode" title="Что делать с чатами, где есть слово"><option value="in">показать только их</option><option value="out">скрыть их</option></select>
+          <select id="ch-type"><option value="">все типы</option><option value="group">группы</option><option value="channel">каналы</option><option value="private">личные</option><option value="bot">боты</option><option value="forum">форумы (с темами)</option></select>
+          <select id="ch-mode"><option value="">любой режим</option><option value="chat">рабочий</option><option value="incident">авария</option><option value="alerts">алерты</option><option value="news">новости</option></select>
+          <select id="ch-act"><option value="">активность: любая</option><option value="7">за 7 дней</option><option value="30">за 30 дней</option><option value="90">за 3 месяца</option><option value="180">за полгода</option><option value="-30">тишина больше месяца</option><option value="-90">тишина больше 3 месяцев</option><option value="-180">тишина больше полугода</option><option value="-365">тишина больше года</option><option value="none">сообщений нет</option></select>
+          <select id="ch-desc"><option value="">описание: любое</option><option value="yes">есть ваше</option><option value="no">нет вашего</option><option value="ai">есть от ИИ</option><option value="noai">нет от ИИ</option><option value="none">никакого</option></select>
+          <select id="ch-excl"><option value="">включённые и исключённые</option><option value="in">только включённые</option><option value="out">только исключённые</option></select>
+          <button class="b" onclick="chResetFilters()" style="padding:6px 10px">Сбросить</button>
+        </div>
+        <div class="ch-bulk" id="ch-bulk"><b id="ch-bulk-who"></b>
+          <select id="chb-prio"><option value="">важность…</option><option value="high">высокая</option><option value="normal">обычная</option><option value="low">низкая</option></select>
+          <select id="chb-mode"><option value="">режим…</option><option value="chat">рабочий</option><option value="incident">авария</option><option value="alerts">алерты</option><option value="news">новости</option></select>
+          <button class="b" onclick="chBulk({exclude:true},'Исключить')">Исключить</button><button class="b" onclick="chBulk({exclude:false},'Включить')">Включить</button>
+          <button class="b" id="ch-ai-btn" onclick="chAiAsk('chats', chTargets(), {})">✦ Описать ИИ</button>
+          <button class="b" id="ch-ai-stop" onclick="stopJob('describe')" style="display:none">Остановить</button>
+          <button class="b" id="ch-rule-q" onclick="chRuleFromFilter()" style="display:none" title="Чтобы и новые чаты с этим словом настраивались сами">＋ Правило по этому слову</button>
+          <span class="hint" style="margin-left:auto" id="ch-count"></span></div>
+        <div class="ch-bulk">
+          <label for="ch-invite-user">Участник Telegram</label><input id="ch-invite-user" placeholder="@username" autocomplete="off">
+          <button class="b" id="ch-invite" onclick="chManage('invite')">Добавить в выбранные чаты</button>
+          <button class="b" id="ch-leave" onclick="chManage('leave')">Выйти из выбранных чатов</button>
+          <button class="b" onclick="CH.sel.clear();chRender()">Снять выделение</button>
+        </div>
+        <div id="ch-manage-report" role="status" aria-live="polite"></div>
+        <div class="log" id="ch-ai-log"></div>
+        <div class="tablewrap" id="chats-wrap" style="display:none"><table><thead id="ch-head"><tr><th class="cb"><input type="checkbox" id="ch-all" title="Выбрать все показанные"></th><th data-sort="title">Чат</th><th>Тип</th><th data-sort="last" title="Последнее сообщение">Активность</th><th data-sort="messages" title="Сообщений в базе">Сообщ.</th><th>Важность</th><th>Режим</th><th title="Не попадает в сводки, поиск и выгрузку истории">Искл.</th><th></th></tr></thead><tbody id="chats-body"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card ch-v" id="ch-v-people" style="display:none">
+    <div class="hint" style="margin-top:0">Заметка о человеке — одна на все чаты: зона ответственности, с чем к нему обращаться, с чем он приходит к вам, приоритет.
+    Роль в конкретном чате — в окне чата → «Участники». «✦ Описать ИИ» читает сообщения человека во всех чатах: что он пишет, на что отвечает, что отвечают ему.</div>
+    <div class="ch-filters" style="margin-top:10px">
+      <input type="text" id="pp-q" placeholder="Имя или @ник" autocomplete="off">
+      <select id="pp-desc"><option value="">описание: любое</option><option value="yes">есть ваше</option><option value="no">нет вашего</option><option value="ai">есть от ИИ</option><option value="none">никакого</option></select>
+      <select id="pp-prio"><option value="">любой приоритет</option><option value="high">важные</option><option value="normal">обычные</option><option value="low">неважные</option></select>
+      <select id="pp-act"><option value="">писал: когда угодно</option><option value="30">за 30 дней</option><option value="90">за 3 месяца</option><option value="365">за год</option></select>
+    </div>
+    <div class="ch-bulk"><b id="pp-who"></b>
+      <select id="ppb-prio"><option value="">приоритет…</option><option value="high">важный</option><option value="normal">обычный</option><option value="low">неважный</option></select>
+      <button class="b" onclick="chAiAsk('people', ppTargets(), {log:'pp-log'})">✦ Описать ИИ (по всем чатам)</button>
+      <span class="hint" style="margin-left:auto" id="pp-count"></span></div>
+    <div class="msg" id="pp-msg"></div><div class="log" id="pp-log"></div>
+    <div class="tablewrap"><table><thead><tr><th class="cb"><input type="checkbox" id="pp-all"></th><th>Человек</th><th>Сообщ.</th><th>Чатов</th><th>Писал</th><th>Приоритет</th><th></th></tr></thead><tbody id="pp-body"></tbody></table></div>
+  </div>
+
+  <div class="card ch-v" id="ch-v-rules" style="display:none">
+    <div class="hint" style="margin-top:0">Правило по названию действует на все чаты, в названии которых есть слово, — и на новые тоже
+    (например, все «Авария …» — режим «авария» и исключить). Явная настройка конкретного чата важнее правила. Можно регулярное выражение: <code>re:^INC\d+</code>.</div>
+    <div class="tablewrap" style="max-height:none;min-height:0"><table><thead><tr><th>Слово в названии</th><th>Режим</th><th>Важность</th><th>Исключить</th><th>Описание</th><th></th></tr></thead><tbody id="ch-rules-list"></tbody></table></div>
+    <div class="row" style="margin-top:12px;flex-wrap:wrap">
+      <input type="text" id="nr-match" placeholder="Слово или фраза, например «авария»" style="flex:1 1 220px">
+      <select id="nr-mode" class="fit" style="width:auto"><option value="">режим —</option><option value="chat">рабочий</option><option value="incident">авария</option><option value="alerts">алерты</option><option value="news">новости</option></select>
+      <select id="nr-prio" class="fit" style="width:auto"><option value="">важность —</option><option value="high">высокая</option><option value="normal">обычная</option><option value="low">низкая</option></select>
+      <label class="check fit" style="margin:0"><input type="checkbox" id="nr-excl"> исключить</label>
+    </div>
+    <input type="text" id="nr-desc" placeholder="Описание для модели (необязательно): «чаты аварий, создаются автоматически порталом»" style="margin-top:8px">
+    <div class="actions"><button class="b p" onclick="chRuleAdd()">Добавить правило</button></div>
+    <div class="msg" id="nr-msg"></div>
+  </div>
+
+  <div class="card ch-v" id="ch-v-export" style="display:none">
+    <h3>Выгрузка всей истории</h3>
+    <div class="hint">Через Telegram забирается переписка всех чатов, кроме исключённых, — с изображениями и лёгкими файлами (логи, документы).
+    Тяжёлые файлы (видео, голосовые, крупные документы) остаются ссылкой — их можно докачать, если понадобятся.
+    Выгрузку можно остановить и запустить снова — продолжит с того места, где остановилась. Изображения при выгрузке не описываются
+    (это долго): новые описываются перед сводкой, остальные — у чата («Настроить» → «Изображения») или когда модель
+    решит, что картинка важна для ответа.</div>
+    <div class="grid2">
+      <div><label>С какой даты (пусто — вся история)</label><input type="date" id="ex-since"></div>
+      <div><label>Лёгкий файл — до, МБ (крупнее — только ссылка)</label><input type="number" id="ex-light" min="0" max="100" step="0.5"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="ex-media" checked> Скачивать изображения и лёгкие файлы</label>
+    <div class="hint" id="ex-stats"></div>
+    <div class="actions"><button class="b p" id="ex-btn" onclick="runExport()">Выгрузить историю</button>
+    <button class="b" id="ex-stop" onclick="stopJob('export')" style="display:none">Остановить</button>
+    <button class="b" onclick="openFolder('media')">Открыть папку с файлами</button></div>
+    <div class="log" id="ex-log"></div>
+  </div>
+  <div class="actions"><button class="b" onclick="go('digest')">К сводке →</button></div>
+</div>
+
+<div class="page" id="p-digest">
+  <h1>Сводка</h1>
+  <p class="lead" id="dg-lead">Соберите сводку по чатам за период — откроется отчёт: главное, где нужна ваша реакция (с черновиками ответов), аварии, номера инцидентов.</p>
+  <div class="msg warn" id="dg-notready"></div>
+  <div class="card dg-card">
+   <div class="dg-presets" id="dg-presets"></div>
+   <div class="dg-modebar"><span class="dg-lbl">С чего начать</span>
+    <div class="seg" id="dg-mode"><button data-v="tg" class="on" title="Обычная сводка: переписка Telegram за период, потом — сверка с почтой, ITSM и другими источниками">💬 Чаты Telegram за период</button><button data-v="source" title="Начать с ITSM (очередь группы) или с трекера: карточки, задачи, статусы — а Telegram и почту проверить по номерам">🎫 От источника: ITSM или трекер</button></div></div>
+   <div class="dg-grid">
+    <div class="dg-left">
+    <div class="dg-sm" id="dg-sm" style="display:none">
+      <div class="dg-lbl">Начать с</div>
+      <div class="seg" id="dg-sm-start"><button data-v="tracker" class="on">🗂 xTracker — задачи</button></div>
+      <div class="row dg-sm-row"><div><label id="dg-sm-group-l">Группа исполнителей</label><input type="text" id="dg-sm-group" placeholder="Например: Service Desk"></div>
+        <div class="dg-sm-st"><label>Какие записи</label><select id="dg-sm-state"><option value="open">все незакрытые</option><option value="waiting">только в ожидании</option><option value="work">в работе, кроме ожидания</option><option value="new">новые, не взятые в работу</option></select></div></div>
+      <div class="dg-sm-types" id="dg-sm-types"><span class="hint">Тип:</span>
+        <label class="check fit"><input type="checkbox" data-t="incident" checked> инциденты</label>
+        <label class="check fit"><input type="checkbox" data-t="request"> запросы</label>
+        <label class="check fit"><input type="checkbox" data-t="problem"> проблемы</label>
+        <label class="check fit"><input type="checkbox" data-t="change"> изменения</label></div>
+      <label>Ещё условия <span class="hint" style="display:inline">— своими словами, как сказали бы Maverick</span></label>
+      <input type="text" id="dg-sm-text" data-voice="inline" placeholder="Например: приоритет 1–2; сервис «Автоплатёж»; открыты больше недели">
+      <div class="dg-last" style="margin-top:8px">Не больше <input type="number" id="dg-sm-limit" min="1" max="300" step="10" value="60"> записей</div>
+      <div class="row dg-dt" style="margin-top:8px"><div><label>Создан после</label><input type="datetime-local" id="dg-sm-from"></div>
+        <div><label>Создан до <span class="hint">(пусто — до сейчас)</span></label><input type="datetime-local" id="dg-sm-to"></div></div>
+      <div class="hint" id="dg-sm-sum"></div>
+    </div>
+    <div class="dg-tgonly">
+    <div class="dg-lbl">За какое время</div>
+    <div class="seg" id="dg-period">
+      <button data-v="h1">1 ч</button><button data-v="h2">2 ч</button><button data-v="h3">3 ч</button><button data-v="day" class="on">Сутки</button><button data-v="week">Неделя</button><button data-v="month">Месяц</button><button data-v="last" title="С конца прошлой сводки до сейчас — только новое">С прошлой сводки</button><button data-v="custom">Свой…</button>
+    </div>
+    <div id="dg-custom" class="dg-custom" style="display:none">
+      <div class="dg-last">Последние <input type="number" id="dg-h" min="0" max="8784" step="1" placeholder="0"> ч
+        <input type="number" id="dg-m" min="0" max="59" step="5" placeholder="0"> мин <span class="hint">— или точные даты и время:</span></div>
+      <div class="row dg-dt"><div><label>С</label><input type="datetime-local" id="dg-from"></div>
+        <div><label>По <span class="hint">(пусто — до сейчас)</span></label><input type="datetime-local" id="dg-to"></div></div>
+    </div>
+    <div class="hint" id="dg-period-text"></div>
+    </div>
+    <div class="dg-lbl" style="margin-top:14px" id="dg-extra-l">Дополнительно для этой сводки <span class="hint">— на что обратить внимание, что опустить</span></div>
+    <textarea id="dg-extra" rows="3" data-voice="inline" placeholder="Например: особенно — всё про релиз 5.2 и биллинг; опусти поздравления и обеды; черновики ответов — короче. Пусто — обычная сводка."></textarea>
+    <label class="check" style="margin-top:4px"><input type="checkbox" id="dg-extra-keep"> Запомнить для следующих сводок</label>
+    <label class="check dg-chk dg-tgonly"><input type="checkbox" id="dg-hist" checked onchange="try{localStorage.setItem('od_dg_hist', this.checked ? '1' : '0')}catch(e){}">
+      <span>Опираться на прошлые сводки <span class="hint">— уже разобранное модель заново не читает, берёт из прошлых сводок;
+      в отчёте — «Что изменилось с прошлой сводки» и пометки «новое / изменилось / закрыто»</span></span></label>
+    <label class="check"><input type="checkbox" id="dg-sync" checked> Сначала забрать новые сообщения из Telegram</label>
+    <label class="check"><input type="checkbox" id="dg-send"> Отправить короткую сводку и отчёт в «Избранное» Telegram</label>
+    <label class="check dg-chk"><input type="checkbox" id="dg-preempt" checked onchange="try{localStorage.setItem('od_dg_preempt', this.checked ? '1' : '0')}catch(e){}">
+      <span>Перед сводкой остановить остальное <span class="hint">— ИИ в чате, ассистент, запросы к плагинам совсем; ИИ-описания,
+      выгрузку, глоссарий — на время сводки; оборвать зависшие запросы и закрыть открытые сессии Maverick</span></span></label>
+    <div class="dg-src dg-tgonly" id="dg-src">
+      <div class="dg-src-h"><b>Сверить с другими источниками</b> <span class="hint">через плагины Maverick</span></div>
+      <div class="dg-src-row" id="dg-s-list"></div>
+      <div class="hint">Telegram обрабатывается отдельно и обезличенно. В сверку с почтой, ITSM и вики идут только очищенные пункты
+        сводки — без текста сообщений и без личных переписок. В отчёте появится раздел «Общая картина»: что совпало, что есть
+        только в Telegram, что только в почте, статусы из ITSM. <a href="#" onclick="go('src');return false">Настройки источников</a></div>
+      <div class="msg warn" id="dg-src-warn"></div>
+    </div>
+    </div>
+    <div class="dg-right dg-smright" id="dg-smright" style="display:none">
+      <div class="dg-ch-h"><b>Затем проверить</b><span class="hint">по номерам из очереди</span></div>
+      <label class="check"><input type="checkbox" id="dg-sm-second" checked> <span id="dg-sm-second-t">🗂 Задачи трекера из инцидентов — статус, релиз, кто сейчас действует</span> <span data-pst-sm="tracker"></span></label>
+      <label class="check"><input type="checkbox" id="dg-sm-tg" checked> <span>💬 Telegram — где упоминаются номера <span class="hint" style="display:inline">(по базе на этом компьютере; переписка уходит в модель отдельно и обезличенно)</span></span></label>
+      <label class="check"><input type="checkbox" id="dg-sm-mail" checked> <span>✉ Почта — письма с этими номерами</span> <span data-pst-sm="mail"></span></label>
+      <label class="check"><input type="checkbox" id="dg-sm-rooms"> <span>💭 X5 Rooms</span> <span data-pst-sm="rooms"></span></label>
+      <label class="check"><input type="checkbox" id="dg-sm-meet"> <span>🎙 Встречи (Scriber AI)</span> <span data-pst-sm="meet"></span></label>
+      <div class="dg-last" style="margin-top:8px">Упоминания — за последние <input type="number" id="dg-sm-days" min="1" max="3650" value="30"> дн.</div>
+      <div class="hint dg-sm-how"><b>Как идёт разбор:</b> 1) список записей из <span class="dg-sm-s1">ITSM</span> по условиям; 2) подробные
+        карточки — журнал работ, ожидание, связанные номера; 3) <span class="dg-sm-s2">задачи трекера из них</span>; 4) Telegram, почта —
+        только по номерам; 5) модель: актуальность, от кого ждут, общие проблемы; программа сама считает цифры и находит расхождения.
+        В отчёте: цифры, что сделать, группы, требует внимания, что можно закрыть, каждая запись подробно.</div>
+      <div class="msg warn" id="dg-sm-warn"></div>
+    </div>
+    <div class="dg-right dg-tgonly">
+      <div class="dg-ch-h"><b>Чаты</b><span class="hint" id="dg-ch-sum"></span></div>
+      <div class="row dg-ch-tools"><input type="search" id="dg-ch-q" placeholder="Найти чат…">
+        <label class="check fit" style="margin:0" title="Скрыть чаты без сообщений за выбранный период"><input type="checkbox" id="dg-ch-active" checked> с сообщениями</label></div>
+      <div class="dg-ch-list" id="dg-ch-list"><div class="hint">Загружаю…</div></div>
+      <div class="dg-ch-btns"><button class="lnk" onclick="dgChAll(true)">Отметить показанные</button><button class="lnk" onclick="dgChAll(false)" title="Ничего не отмечено — сводка по всем чатам (кроме исключённых)">Снять все = все чаты</button></div>
+    </div>
+   </div>
+    <div class="hint" id="dg-base"></div>
+    <div class="actions"><button class="b p" id="dg-btn" onclick="dgConfirm()">Собрать сводку</button>
+    <button class="b dg-stop" id="dg-stop" onclick="dgStop()" style="display:none" title="Остановить сводку: запросы к модели оборвутся, сессии Maverick закроются, отчёт не будет записан">⏹ Остановить сводку</button>
+    <button class="b" id="demo-btn" onclick="runDigest(true)" title="Проверить модель и вид отчёта без Telegram">Пробная сводка на примере</button>
+    <span class="hint" id="dg-status"></span></div>
+    <div class="log" id="dg-log"></div>
+  </div>
+  <div class="card result" id="dg-result" style="display:none"></div>
+
+  <div class="card">
+    <h3>Спросить по переписке</h3>
+    <div class="row"><input type="text" id="ask-q" placeholder="Что решили по INC0048213? Кто ждёт от меня ответа?" onkeydown="if(event.key==='Enter')ask()"><button class="b p fit" id="ask-btn" onclick="ask()">Спросить</button></div>
+    <div class="log" id="ask-log"></div>
+    <div class="answer" id="ask-answer"></div>
+    <div id="ask-extra"></div>
+  </div>
+
+  <div class="card">
+    <h3>Отчёты</h3>
+    <div id="reports"><div class="hint">Пока нет.</div></div>
+    <div class="actions"><button class="b" onclick="openFolder('reports')">Открыть папку с отчётами</button></div>
+  </div>
+
+  <div class="card" id="sc-card">
+    <h3>Сводки по расписанию</h3>
+    <div class="hint" style="margin-top:0">Программа сама собирает сводку в заданное время — по выбранному шаблону — и, если
+      отмечено, присылает её в «Избранное» Telegram. Работает, <b>пока OpsDigest запущен</b> (окно можно закрыть — программа
+      остаётся в фоне) и данные открыты. Если в это время компьютер спал или был выключен — запуск просто пропускается.
+      <span id="sc-auto"></span></div>
+    <div class="msg warn" id="sc-legacy"></div>
+    <div id="sc-list"></div>
+    <div id="sc-edit" class="sc-edit" style="display:none"></div>
+    <div class="msg" id="sc-msg"></div>
+    <div class="actions"><button class="b" onclick="scEdit()">＋ Добавить расписание</button></div>
+  </div>
+</div>
+
+<!-- Диагностика -->
+<div class="page" id="p-src">
+  <h1>Источники через Maverick</h1>
+  <p class="lead">Почта, ITSM (инциденты, проблемы, изменения), вики (Confluence), мессенджер X5 Rooms, трекер задач xTracker
+  и расшифровки встреч Scriber AI — через плагины корпоративного агента Maverick.
+  Плагины подключаются в чате Maverick; бывает, что подключение «забывается» (истёк вход, нужно заново дать согласие).
+  Перед каждым обращением программа проверяет, что плагин отвечает, и если нет — показывает предупреждение (часто со ссылкой
+  для входа) и не строит выводов на пустом ответе. <b>Переподключаете плагин вы сами в чате Maverick</b> — логины и пароли
+  программа в Maverick не передаёт.</p>
+  <div class="msg warn" id="src-nomav"></div>
+  <div class="src-cards" id="src-cards"></div>
+  <div class="card">
+    <h3>Проверка подключения</h3>
+    <div class="row" style="max-width:460px"><span class="fit">Верить удачной проверке</span><input type="number" id="src-min" min="5" max="720" value="30" style="max-width:90px" class="fit"><span>минут</span></div>
+    <label>Адрес чата Maverick (кнопка «Открыть чат Maverick»; пусто — по адресу API)</label><input type="text" id="src-web" placeholder="https://maverick.company.ru" style="max-width:460px">
+    <div class="actions"><button class="b p" onclick="srcSave()">Сохранить</button><button class="b" id="src-check-all" onclick="srcCheck()">Проверить все сейчас</button><span class="hint" id="src-saved"></span></div>
+    <div class="log" id="src-log"></div>
+  </div>
+  <div class="card">
+    <h3>Сводка: с чем сверять Telegram по умолчанию</h3>
+    <div id="src-dg-list"></div>
+    <label class="check"><input type="checkbox" id="src-private"> Включать в сверку и личные переписки <span class="hint">(по умолчанию — нет: они не встречаются с почтой и ITSM даже обезличенными)</span></label>
+  </div>
+  <div class="card">
+    <h3>Номера в ITSM</h3>
+    <div class="hint" style="margin-top:-4px">Шаблоны (регулярные выражения), по которым программа узнаёт номера в чатах, письмах и сводках. Форматы из
+      глоссария (поле «Номер» у значения термина) учитываются тоже.</div>
+    <div class="grid2"><div><label>Инцидент / обращение</label><input type="text" id="src-p-incident"></div>
+      <div><label>Проблема</label><input type="text" id="src-p-problem"></div><div><label>Изменение</label><input type="text" id="src-p-change"></div>
+      <div><label>Задача трекера (xTracker)</label><input type="text" id="src-p-task" placeholder="\b[A-Z][A-Z0-9]{1,11}-\d{1,7}\b"></div></div>
+  </div>
+  <div class="card">
+    <h3>Глоссарий</h3>
+    <label class="check"><input type="checkbox" id="src-gl-collect"> Выписывать термины из всего, что разбирает программа (без модели, на этом компьютере)</label>
+    <label class="check"><input type="checkbox" id="src-gl-process"> После каждой сводки обрабатывать очередь терминов моделью (фоновая задача)</label>
+    <label class="check"><input type="checkbox" id="src-gl-wiki"> Искать термины в вики (плагин Confluence)</label>
+    <div class="row" style="flex-wrap:wrap;gap:4px 16px"><span class="fit hint">Где ещё искать значения терминов:</span><span id="src-gl-src"></span></div>
+    <div class="actions"><button class="b p" onclick="srcSave()">Сохранить</button></div>
+  </div>
+  <div class="card">
+    <h3>Описания чатов, тем и людей</h3>
+    <div class="hint" style="margin-top:-6px">Какие источники смотреть при «✦ Описать ИИ» по умолчанию (в окне описания можно выбрать другие).
+      Вики знает назначение чатов, команды, должности; адресная книга почты — должности, подразделения и контакты.</div>
+    <div class="row" style="flex-wrap:wrap;gap:4px 16px"><span id="src-ds-src"></span></div>
+    <label class="check"><input type="checkbox" id="src-lookup-people"> Искать карточки людей по имени и логину Telegram в вики и адресной книге
+      <span class="hint">(исключение из обезличивания: в запрос уходят только имя и логин, без переписки)</span></label>
+    <label class="check"><input type="checkbox" id="src-img-on"> Скачивать изображения из найденного (вложения Maverick, скриншоты, схемы)</label>
+    <label class="check"><input type="checkbox" id="src-img-desc"> Описывать эти изображения моделью для картинок</label>
+    <div class="actions"><button class="b p" onclick="srcSave()">Сохранить</button></div>
+  </div>
+</div>
+
+<div class="page" id="p-creds">
+  <h1>Учётные данные</h1>
+  <p class="lead">Логины, пароли и токены, которые бывают нужны Maverick, чтобы заново подключить плагин (почта, ITSM,
+  Confluence), и для других целей. Хранятся зашифрованными в рабочей папке; показать или скопировать пароль можно только
+  после повторного ввода пароля OpsDigest — доступ открывается на 2 минуты и закрывается при любой блокировке. Буфер
+  обмена очищается через 30 секунд. Программа сама никуда их не отправляет: копируете и вставляете в чат Maverick вы.</p>
+  <div class="msg warn" id="cr-warn"></div>
+  <div class="card">
+    <div class="ch-filters"><button class="b p" onclick="crEdit()">＋ Добавить</button>
+      <span style="flex:1"></span><span class="hint" id="cr-open"></span>
+      <button class="b" id="cr-lock" onclick="crClose()" style="display:none">🔒 Закрыть доступ</button></div>
+    <div class="tablewrap" style="max-height:none;min-height:0"><table><thead><tr><th>Название</th><th>Вид</th><th>Логин / адрес</th><th>Пароль / токен</th><th>Для плагинов</th><th></th></tr></thead><tbody id="cr-body"></tbody></table></div>
+  </div>
+  <div class="card">
+    <h3>Какая запись нужна плагину</h3>
+    <div class="hint" style="margin-top:-6px">Если плагин «забылся», предупреждение подскажет эту запись, а кнопки скопируют логин и пароль.
+      «По умолчанию» — запись, у которой отмечен плагин, иначе основная.</div>
+    <div class="grid2" id="cr-map"></div>
+  </div>
+</div>
+
+<div class="modal" id="cr-modal">
+  <div class="mbox auto" style="width:min(620px,94vw)">
+    <div class="mhead"><b id="cr-m-title">Новая запись</b><button class="x" onclick="$('cr-modal').classList.remove('on')" title="Закрыть">×</button></div>
+    <label>Название</label><input type="text" id="cr-f-title" placeholder="Основная учётная запись · Confluence PAT · …">
+    <div class="grid2"><div><label>Вид</label><select id="cr-f-kind"></select></div>
+      <div><label>Способ входа (для подсказки)</label><input type="text" id="cr-f-auth" placeholder="логин и пароль · PAT · OAuth"></div></div>
+    <div class="grid2"><div><label>Логин</label><input type="text" id="cr-f-login" autocomplete="off"></div>
+      <div><label>Адрес (Confluence, сервис)</label><input type="text" id="cr-f-url" placeholder="https://wiki.company.ru"></div></div>
+    <label>Пароль / токен <span class="hint" id="cr-f-keep"></span></label>
+    <div class="row"><input type="password" id="cr-f-secret" autocomplete="new-password"><button class="b fit" type="button" onclick="const i=$('cr-f-secret');i.type=i.type==='password'?'text':'password'">👁</button></div>
+    <label>Заметка</label><input type="text" id="cr-f-note" placeholder="например: срок действия токена до 01.03.2027">
+    <label class="check"><input type="checkbox" id="cr-f-main"> Основная учётная запись (по умолчанию — для всех плагинов)</label>
+    <div class="row" style="flex-wrap:wrap;gap:4px 18px;margin-top:6px"><span class="fit hint">Для плагинов:</span>
+      <label class="check fit" style="margin:0"><input type="checkbox" data-crp="mail"> Почта</label>
+      <label class="check fit" style="margin:0"><input type="checkbox" data-crp="wiki"> Вики (Confluence)</label>
+      <label class="check fit" style="margin:0"><input type="checkbox" data-crp="rooms"> X5 Rooms</label>
+      <label class="check fit" style="margin:0"><input type="checkbox" data-crp="tracker"> xTracker</label>
+      <label class="check fit" style="margin:0"><input type="checkbox" data-crp="meet"> Scriber AI</label></div>
+    <div class="msg" id="cr-m-msg"></div>
+    <div class="actions"><button class="b p" onclick="crSave()">Сохранить</button><button class="b" id="cr-m-del" onclick="crDel()">Удалить</button></div>
+  </div>
+</div>
+
+<div class="modal" id="cr-pw">
+  <div class="mbox auto" style="width:min(420px,94vw)">
+    <div class="mhead"><b>Пароль OpsDigest</b><button class="x" onclick="crPwDone(null)" title="Отмена">×</button></div>
+    <div class="hint" style="margin-top:0">Чтобы показать или скопировать пароль из «Учётных данных», введите пароль программы — доступ откроется на 2 минуты.</div>
+    <input type="password" id="cr-pw-in" style="margin-top:10px" onkeydown="if(event.key==='Enter')crPwOk()">
+    <div class="msg" id="cr-pw-msg"></div>
+    <div class="actions"><button class="b p" onclick="crPwOk()">Открыть</button></div>
+  </div>
+</div>
+
+<div class="page" id="p-mods">
+  <h1>Разделы и тема</h1>
+  <p class="lead">Какие разделы показывать вверху окна. Выключенный раздел исчезает из шапки; данные и настройки остаются —
+  включите снова, и всё на месте. «Настройки» видны всегда.</p>
+  <div class="card mods" id="mods-list"></div>
+  <div class="card">
+    <h3>Тема</h3>
+    <div class="seg" id="theme-seg"><button data-t="auto">Как в системе</button><button data-t="light">Светлая</button><button data-t="dark">Тёмная</button></div>
+    <div class="hint">Переключать можно и кнопкой 🌓 в шапке. Отчёты, открытые из окна, — в той же теме.</div>
+  </div>
+</div>
+
+<div class="page" id="p-sec">
+  <h1>Защита данных</h1>
+  <p class="lead">Переписка, вложения, отчёты, настройки и сессия Telegram в рабочей папке зашифрованы: в Проводнике
+  их не открыть, читать можно только здесь после пароля. Всё, что уходит во внешнюю модель (Maverick, Claude),
+  обезличивается: имена — коды, мат — нейтральные слова.</p>
+  <div class="card">
+    <h3>Блокировка</h3>
+    <div class="grid2">
+      <div><label>Блокировать ПИН-кодом после бездействия, минут</label><input type="number" id="sec-min" min="1" max="120"></div>
+      <div><label>Новый ПИН (4–6 цифр)</label><input type="password" id="sec-pin" inputmode="numeric" maxlength="6" placeholder="оставьте пустым — не менять"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="sec-tg"> Открывать данные только после входа в Telegram (та же учётка)</label>
+    <div class="hint">Без входа в Telegram пароль открывает только настройки и шаг «Вход». Снять условие можно после входа
+    в Telegram или кодом восстановления — тогда хватит пароля.</div>
+    <div class="actions"><button class="b p" onclick="saveSec()">Сохранить</button><button class="b" onclick="lockNow(true)">Заблокировать полностью (нужен пароль)</button></div>
+    <div class="msg" id="sec-msg"></div>
+  </div>
+  <div class="card">
+    <h3>Пароль</h3>
+    <div class="grid2"><div><label>Текущий пароль</label><input type="password" id="sec-old"></div>
+    <div><label>Новый пароль (от 8 символов)</label><input type="password" id="sec-new"></div></div>
+    <div class="actions"><button class="b" onclick="changePw()">Сменить пароль</button></div>
+    <div class="msg" id="pw-msg"></div>
+  </div>
+  <div class="card">
+    <h3>Обезличивание для внешних моделей</h3>
+    <label class="check"><input type="checkbox" id="pv-on"> Заменять имена людей кодами (Ч417, Ч82…), телефоны и почты — тоже</label>
+    <div class="hint">В каждом запросе к модели — свои случайные коды: один и тот же человек в соседних запросах под разными
+    номерами, поэтому по журналам модели не сшить, кто есть кто. Карта кодов живёт только в памяти на время запроса.</div>
+    <label class="check"><input type="checkbox" id="pv-soft"> Смягчать мат и оскорбления</label>
+    <label>Прозвища — по строке: «Имя Фамилия: прозвище, прозвище»</label>
+    <textarea id="pv-people" placeholder="Иван Петров: Палыч, Ванёк"></textarea>
+    <label>Не трогать (названия систем и проектов, похожие на имена) — через запятую</label>
+    <input type="text" id="pv-keep" placeholder="Роза, Марс, Петров-сервер">
+    <div class="hint">Локальная модель (LM Studio на этом компьютере) получает текст как есть.</div>
+    <div class="actions"><button class="b p" onclick="savePrivacy()">Сохранить</button><button class="b" onclick="showSent()">Что ушло в модель</button></div>
+    <div class="msg" id="pv-msg"></div>
+    <div id="pv-sent"></div>
+  </div>
+</div>
+
+<div class="page" id="p-diag">
+  <h1>Диагностика</h1>
+  <p class="lead">Самопроверка покажет, что разрешает этот компьютер (политики, сеть, прокси) и всё ли установлено.
+  Если что-то не работает — создайте отчёт и перешлите его разработчику: в нём нет переписки, названий чатов, имён,
+  телефонов, адресов серверов и ключей — только что и где сломалось.</p>
+  <div class="card">
+    <div class="actions" style="margin-top:0"><button class="b p" id="diag-btn" onclick="runDiag()">Проверить компьютер</button>
+    <button class="b" id="rep-btn" onclick="makeReport()">Создать отчёт об ошибке</button></div>
+    <div class="tablewrap" id="diag-wrap" style="display:none"><table><tbody id="diag-body"></tbody></table></div>
+  </div>
+  <div class="card" id="rep-card" style="display:none">
+    <h3>Отчёт сохранён</h3>
+    <div class="hint" id="rep-path"></div>
+    <textarea id="rep-text" readonly style="min-height:280px"></textarea>
+    <div class="actions"><button class="b" onclick="copyReport()">Копировать текст</button><button class="b" onclick="openFolder('logs')">Открыть папку журналов</button></div>
+  </div>
+</div>
+
+<div class="page" id="p-gl">
+  <h1>Глоссарий и база знаний</h1>
+  <p class="lead">Термины вашей работы: сервисы, приложения и модули, команды, API, процессы, типы заявок и их номера,
+  сокращения, типовые проблемы и решения. У термина может быть несколько значений — с признаками, как их различать
+  («инцидент» — обращение в ITSM или чат малой аварии). Глоссарий подставляется в каждый запрос к модели: сводки, ИИ в чате,
+  вопросы, ИИ-описания. Пополняется сам — при каждой сводке и кнопкой «Пополнить из чатов»; неясное — вопросы вам.</p>
+  <div class="seg" id="gl-tabs" style="margin-bottom:12px"><button data-t="terms" class="on">📖 Термины</button><button data-t="skill">🧠 Навык: правила и поправки<span class="cnt" id="sk-tab-cnt"></span></button><button data-t="links">🔗 Опорные ссылки</button><button data-t="fb">📝 Отзывы и журнал</button></div>
+  <div id="sk-wrap" style="display:none">
+    <div class="card" data-skt="skill">
+      <h3>Правила и поправки <span class="pill" id="sk-r-n"></span></h3>
+      <div class="hint" style="margin-top:-6px">Чему вы научили программу — как SKILL.md в Claude Code: «номер INC1234567 — обращение в ITSM, чат с INC в
+        названии — инцидент-чат», «в сводке не пиши про болталку», «ищи проблемы в заданной группе». Правило попадает в запрос к
+        модели, когда оно к нему относится: по области (сводка, ассистент, поиск, описания…) и словам-признакам (без признаков — всегда).
+        Пополняется само из ваших отзывов (👍/👎 у любого ответа и отчёта) и указаний в ассистенте («запомни, что…»).</div>
+      <div class="sk-new"><textarea id="sk-r-text" rows="2" placeholder="Новое правило: как программе поступать в будущем…" data-voice></textarea>
+        <div class="row" style="flex-wrap:wrap;gap:4px 14px;margin-top:6px"><span class="fit hint">Где:</span><span id="sk-r-scope"></span></div>
+        <div class="row" style="margin-top:6px"><input type="text" id="sk-r-keys" placeholder="Слова-признаки через запятую (пусто — всегда): INC, инцидент, авария">
+          <label class="check fit" style="margin:0 8px"><input type="checkbox" id="sk-r-pin"> всегда</label>
+          <button class="b p fit" onclick="skRuleSave()">Добавить</button></div>
+        <input type="hidden" id="sk-r-id"></div>
+      <div class="ch-filters" style="margin-top:10px"><input type="text" id="sk-r-q" placeholder="Поиск по правилам" autocomplete="off">
+        <label class="check fit" style="margin:0"><input type="checkbox" id="sk-r-off"> показать выключенные</label></div>
+      <div id="sk-rules"></div>
+      <div class="actions"><span class="hint">Отзывы и указания:</span>
+        <select id="sk-auto" style="max-width:420px" onchange="skAuto()"><option value="knowledge">правила, термины и ссылки — сразу; изменения чатов и людей — после «Применить»</option><option value="none">всё — только после «Применить»</option></select>
+        <span style="flex:1"></span>
+        <button class="b" onclick="skExport('json')" title="Файл JSON: правила, ссылки и глоссарий — перенести на другой компьютер">Выгрузить навык</button>
+        <button class="b" onclick="skExport('md')" title="Читаемый SKILL.md: всё, чему научили программу">SKILL.md</button>
+        <label class="b" style="cursor:pointer">Загрузить<input type="file" accept=".json" hidden onchange="skImport(this.files[0]);this.value=''"></label></div>
+      <div class="msg" id="sk-msg"></div>
+    </div>
+    <div class="card" data-skt="links">
+      <h3>Опорные ссылки на вики <span class="pill" id="sk-l-n"></span></h3>
+      <div class="hint" style="margin-top:-6px">Страницы, с которых начинать поиск: инструкции, регламенты, списки чатов, оргструктура, дежурства. Они уходят в
+        каждый запрос к плагину вики (и в общие запросы к Maverick) с пометкой «начинай поиск с них». Признаки — когда ссылка особенно нужна.</div>
+      <div class="grid2"><div><label>Название</label><input type="text" id="sk-l-title" placeholder="Регламент работы с инцидентами"></div>
+        <div><label>Адрес</label><input type="text" id="sk-l-url" placeholder="https://wiki.company.ru/pages/…"></div>
+        <div><label>Для чего</label><input type="text" id="sk-l-note" placeholder="что такое инцидент-чат, как заводить INC" data-voice></div>
+        <div><label>Слова-признаки</label><input type="text" id="sk-l-keys" placeholder="инцидент, INC, авария"></div></div>
+      <input type="hidden" id="sk-l-id">
+      <div class="actions"><button class="b p" onclick="skLinkSave()">Сохранить ссылку</button><button class="b" onclick="skLinkClear()">Очистить</button></div>
+      <div id="sk-links"></div>
+    </div>
+    <div class="card" data-skt="fb">
+      <h3>Отзывы</h3>
+      <div class="hint" style="margin-top:-6px">Каждый отзыв (👍 / 👎 / «Поправить» у ответа ассистента, отчёта, поиска, ИИ в чате, описания чата или человека)
+        модель превращает в правила и статьи глоссария. Если неясно — спрашивает в ассистенте (беседа «📝 Отзыв»).</div>
+      <div id="sk-fb"></div>
+      <h3 style="margin-top:16px">Журнал изменений</h3>
+      <div class="hint" style="margin-top:-6px">Всё, что изменили отзывы и указания: правила, термины, описания чатов, тем и людей. Любое можно отменить.</div>
+      <div id="sk-journal"></div>
+    </div>
+  </div>
+  <div id="gl-terms-wrap">
+  <div class="card" id="gl-q-card" style="display:none">
+    <h3>Вопросы к вам <span class="pill" id="gl-q-n"></span></h3>
+    <div class="hint" style="margin-top:-6px">Ответ уточняет статью (модель переписывает её с учётом ответа) и делает её подтверждённой.</div>
+    <div id="gl-qs"></div>
+  </div>
+  <div class="card" id="gq-card">
+    <div class="gq-head"><h3 style="margin:0">Очередь терминов <span class="pill" id="gq-n"></span></h3>
+      <div class="seg gq-tabs" id="gq-tabs"><button data-s="pending" class="on">Ждут</button><button data-s="question">Ждут вашего ответа</button><button data-s="done">Обработаны</button><button data-s="ignored">Не термины</button></div>
+      <span style="flex:1"></span>
+      <button class="b p" id="gq-run" onclick="gqRun()">✦ Обработать очередь</button><button class="b" id="gq-stop" onclick="stopJob('glossary_auto')" style="display:none">Остановить</button>
+    </div>
+    <div class="hint">Программа сама выписывает термины из всего, что разбирает: сводок, ИИ в чате, ассистента, писем, карточек ITSM и
+      статей вики. Обработка: модель собирает примеры из Telegram, почты и ITSM, ищет статью в вики — ясное становится
+      статьёй-черновиком (с примерами, ссылками и иллюстрациями), неясное — вопросом вам.
+      <label class="check" style="display:inline-flex;margin:0 0 0 6px"><input type="checkbox" id="gq-auto" onchange="gqAuto()"> обрабатывать сама после каждой сводки</label></div>
+    <div class="msg" id="gq-msg"></div><div class="log" id="gq-log"></div>
+    <div class="gq-bulk" id="gq-bulk" style="display:none"><b id="gq-sel-n"></b><button class="b" onclick="gqRun(true)">✦ Обработать выбранные</button><button class="b" onclick="gqSet('ignored')">Не термины</button><button class="b" onclick="gqSet('pending')">Вернуть в очередь</button></div>
+    <div class="tablewrap" style="max-height:340px;min-height:0"><table><thead><tr><th class="cb"><input type="checkbox" id="gq-all"></th><th>Термин</th><th>Где встречался</th><th>Пример</th><th title="В скольких текстах">Раз</th><th></th></tr></thead><tbody id="gq-body"></tbody></table></div>
+  </div>
+  <div class="card">
+    <div class="ch-filters"><input type="text" id="gl-q" placeholder="Поиск по терминам, синонимам и значениям" autocomplete="off">
+      <select id="gl-kind"><option value="">все виды</option></select>
+      <select id="gl-status"><option value="">подтверждённые и черновики</option><option value="confirmed">подтверждённые</option><option value="draft">черновики ИИ</option><option value="hidden">скрытые</option></select>
+      <button class="b p" onclick="glNew()">＋ Термин</button>
+      <button class="b" id="gl-scan-btn" onclick="glScan()">✦ Пополнить из чатов</button><button class="b" id="gl-scan-stop" onclick="stopJob('glossary')" style="display:none">Остановить</button>
+      <button class="b" onclick="glExport()" title="Файл JSON — перенести глоссарий на другой компьютер">Выгрузить</button>
+      <label class="b" style="cursor:pointer" title="Загрузить файл JSON (подтверждённые статьи не затираются черновиками)">Загрузить<input type="file" accept=".json" hidden onchange="glImport(this.files[0]);this.value=''"></label>
+    </div>
+    <div class="hint" id="gl-stat"></div>
+    <div class="msg" id="gl-msg"></div><div class="log" id="gl-log"></div>
+    <div class="tablewrap"><table><thead><tr><th>Термин</th><th>Вид</th><th>Что это</th><th>Статус</th><th title="Сколько раз ИИ встречал и уточнял">Встр.</th><th></th></tr></thead><tbody id="gl-body"></tbody></table></div>
+    <div class="hint" id="gl-count"></div>
+  </div>
+  </div>
+</div>
+
+<div class="page" id="p-voice">
+  <h1>Голосовой ввод</h1>
+  <p class="lead">Диктуйте вместо набора: кнопка 🎤 у полей ввода (ассистент, мессенджер, отзывы, правила) или клавиша <b id="vc-hk-lbl">F9</b>
+  в любом поле — говорите, текст появится на месте курсора. Распознаёт локальная модель <b>GigaAM v3</b> (SberDevices, MIT) — прямо в
+  OpsDigest, без серверов и интернета: звук не покидает компьютер и на диск не пишется. Модель сама ставит знаки препинания;
+  «новая строка» и «новый абзац» — переносы. Английские термины глоссария (синонимы кириллицей: «Мэверик» → Maverick) пишутся правильно.</p>
+  <div class="card">
+    <h3>Состояние</h3>
+    <div id="vc-state" class="vc-state"></div>
+    <div class="msg" id="vc-msg"></div>
+    <div class="vc-meter" id="vc-meter"><div class="vc-mh"><b id="vc-m-title"></b><span id="vc-m-eta"></span>
+      <button class="b" id="vc-m-stop" onclick="vcCancel()">Остановить</button></div>
+      <div class="vc-bar"><i id="vc-m-bar"></i></div><div class="vc-bar vc-all"><i id="vc-m-sub"></i></div>
+      <div class="hint" id="vc-m-detail"></div></div>
+    <div class="log" id="vc-log"></div>
+  </div>
+  <div class="card">
+    <h3>Установка <span class="hint">один раз — около 330 МБ</span></h3>
+    <div class="vc-ways">
+      <div class="vc-way"><b>1. Скачать здесь</b><div class="hint">Пакеты (numpy, onnxruntime, onnx-asr) — с PyPI, модель — с Hugging Face, через прокси Windows.
+        Если в компании есть зеркала — укажите их ниже.</div><button class="b p" id="vc-dl" onclick="vcDownload()">Скачать и установить</button></div>
+      <div class="vc-way"><b>2. Архив с домашнего ПК</b><div class="hint">Дома запустите <code>tools\voice_pack.bat</code> из папки программы — получится
+        <code>OpsDigest-voice.zip</code>. Перешлите его себе в «Избранное» Telegram (или на флешке): Telegram Desktop сохранит его в
+        «Загрузки» — программа найдёт сама.</div>
+        <div class="row"><input type="text" id="vc-zip" placeholder="путь к OpsDigest-voice.zip (пусто — найти в «Загрузках»)"><button class="b fit" id="vc-arc" onclick="vcArchive()">Установить из архива</button></div><div class="hint" id="vc-found"></div>
+        <div class="hint">Или <code>tools\voice_pack.bat --github</code> выложит архив в релиз репозитория — сюда его скачает
+          <button class="lnk" onclick="vcArchive(true)">«⟳ с GitHub»</button> (токен — тот же, что у «⟳ Обновить»).</div></div>
+      <div class="vc-way"><b>3. Своя папка</b><div class="hint">Файлы модели уже лежат в папке (скачаны вручную) — укажите её; пакеты .whl из неё
+        тоже поставятся.</div>
+        <div class="row"><input type="text" id="vc-path" placeholder="C:\Models\gigaam-v3-e2e-ctc"><button class="b fit" onclick="vcUsePath()">Использовать</button></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Настройки</h3>
+    <div class="grid2">
+      <div><label>Модель</label><select id="vc-model"></select></div>
+      <div><label>Потоков процессора <span class="hint">(у i5-1240P 4 производительных ядра)</span></label><input type="number" id="vc-thr" min="1" max="16" value="4"></div>
+      <div><label>Выгружать модель из памяти после простоя, минут</label><input type="number" id="vc-idle" min="1" max="240" value="10"></div>
+      <div><label>Клавиша диктовки</label><select id="vc-hk"><option>F9</option><option>F8</option><option>F10</option><option value="Ctrl+Space">Ctrl+Пробел</option><option value="">нет</option></select></div>
+      <div><label>Зеркало Hugging Face (если есть)</label><input type="text" id="vc-hf" placeholder="https://hf-mirror.company.ru"></div>
+      <div><label>Зеркало PyPI (если есть)</label><input type="text" id="vc-pypi" placeholder="https://nexus.company.ru/repository/pypi/simple"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="vc-q8" checked> Квантованная модель int8 (быстрее и вдвое меньше памяти; качество почти то же)</label>
+    <label class="check"><input type="checkbox" id="vc-cmd" checked> Команды голосом: «новая строка», «новый абзац»</label>
+    <label>Замены после распознавания (по строке: <code>как слышится → как писать</code>)</label>
+    <textarea id="vc-rep" rows="4" placeholder="мэверик → Maverick&#10;инк → INC&#10;конфлюенс → Confluence"></textarea>
+    <div class="actions"><button class="b p" onclick="vcSave()">Сохранить</button><button class="b" onclick="vcStop()">Выгрузить модель сейчас</button><span class="hint" id="vc-saved"></span></div>
+  </div>
+  <div class="card">
+    <h3>Проверка</h3>
+    <div class="row"><textarea id="vc-test" rows="3" placeholder="Нажмите 🎤 и скажите что-нибудь…" data-voice></textarea></div>
+    <div class="hint">Первый раз Edge спросит разрешение на микрофон — разрешите. Если микрофон запрещён политикой компании, диктовка не заработает
+      (кнопка покажет причину).</div>
+  </div>
+</div>
+
+</section>
+
+<!-- Мессенджер: чаты Telegram + ИИ в контексте чата -->
+<div class="mx">
+  <div class="mx-fold" id="mx-fold"></div>
+  <aside class="mx-side" id="mx-side">
+    <div class="mx-top"><input type="text" id="mx-q" placeholder="Поиск чатов и сообщений" autocomplete="off"></div>
+    <div class="mx-conn" id="mx-conn"></div>
+    <div class="mx-list" id="mx-list"></div>
+  </aside>
+  <div class="mx-split" id="mx-split" title="Потяните, чтобы изменить ширину списка"></div>
+  <div class="mx-tcol" id="mx-topics">
+    <div class="mx-head" id="mx-thead"></div>
+    <div class="mx-tlist" id="mx-tlist"></div>
+  </div>
+  <div class="mx-chat">
+    <div class="mx-empty" id="mx-empty"><span>Выберите чат слева</span></div>
+    <div class="mx-box" id="mx-chatbox" style="display:none">
+      <div class="mx-head" id="mx-head"></div>
+      <div class="mx-pin" id="mx-pin"></div>
+      <div class="mx-sbar" id="mx-sbar"><input type="text" id="mx-sq" placeholder="Поиск в этом чате (Enter)" autocomplete="off">
+        <select id="mx-sfrom" title="Только сообщения этого участника"><option value="">все авторы</option></select>
+        <button class="ib" onclick="mxSearchIn()">Найти</button><button class="ib" onclick="mxSearchChat()" title="Закрыть">×</button></div>
+      <div class="mx-sres" id="mx-sres"></div>
+      <div class="mx-msgs" id="mx-msgs"></div>
+      <div class="mx-fdate" id="mx-fdate"><span></span></div>
+      <div class="mx-jumps" id="mx-jumps"></div>
+      <button class="mx-down" id="mx-down" onclick="mxDown()" title="Вниз, к новым">↓</button>
+      <div class="mx-comp">
+        <div class="mx-off" id="mx-off"></div>
+        <div class="mx-bar" id="mx-bar"></div>
+        <div class="mx-att" id="mx-att"></div>
+        <div class="mx-row">
+          <label class="ib" title="Прикрепить файл (или перетащите / вставьте скриншот)" style="cursor:pointer;font-size:19px;padding:6px 8px">📎<input type="file" id="mx-file" multiple hidden></label>
+          <textarea id="mx-in" rows="1" placeholder="Сообщение"></textarea>
+          <button class="ib ai" onclick="aiDraft(MX.reply ? MX.reply.id : null)" title="Черновик ответа от ИИ — попадёт в поле, отправите вы" style="padding:9px 8px">✦</button>
+          <button class="mx-send" id="mx-send" onclick="mxSend()" title="Отправить (Enter; новая строка — Shift+Enter). Правый клик — без звука или позже">➤</button>
+        </div>
+      </div>
+      <div class="mx-drop" id="mx-drop">Отпустите, чтобы прикрепить файлы</div>
+    </div>
+  </div>
+  <div class="mx-split r" id="mx-split2" title="Потяните, чтобы изменить ширину панели"></div>
+  <aside class="mx-info" id="mx-info">
+    <div class="ai-head"><div class="ai-title"><b id="inf-title">Чат</b><small id="inf-sub"></small></div><button class="x" onclick="infToggle(false)" title="Скрыть">×</button></div>
+    <div class="inf-tabs" id="inf-tabs"><button data-k="people" class="on">Участники</button><button data-k="media">Медиа</button><button data-k="files">Файлы</button><button data-k="links">Ссылки</button><button data-k="voice">Голосовые</button></div>
+    <div class="ai-body" id="inf-body"></div>
+  </aside>
+  <aside class="mx-ai" id="mx-ai">
+    <div class="ai-head"><div class="ai-title"><b>✦ ИИ в чате</b><small id="ai-chat"></small></div>
+      <select id="ai-prov" title="Какая модель отвечает"></select><button class="x" onclick="aiToggle()" title="Скрыть">×</button></div>
+    <div class="ai-body">
+      <div class="ai-sec"><h4>Сводка чата</h4>
+        <div class="chips" id="ai-chips"><button data-p="unread">Непрочитанное</button><button data-p="3h">3 часа</button><button data-p="today">Сегодня</button><button data-p="day">24 часа</button><button data-p="3d">3 дня</button><button data-p="week">Неделя</button><button data-p="month">Месяц</button></div>
+        <div class="chips" style="margin-top:6px;align-items:center"><input type="date" id="ai-since" style="width:auto;padding:3px 6px;font-size:13px"><button data-p="custom" onclick="aiSummary('custom')">С этой даты</button></div>
+      </div>
+      <div class="ai-sec"><h4>Вопрос по чату</h4>
+        <div class="ai-quote" id="ai-quote" style="display:none"></div>
+        <div class="ai-ask"><textarea id="ai-q" placeholder="Например: что решили по сбою? кто ждёт от меня ответа?"></textarea><button class="b p fit" onclick="aiAsk()" title="Спросить (Enter)">➤</button></div>
+        <div class="hint" style="margin-top:4px">По выделенному ищу в: <a href="#" id="ai-src-lbl" data-srcpick="1" onclick="const r=this.getBoundingClientRect();srcPick(r,'Где искать для вопроса',()=>{this.textContent=srcLabel(aiSources())});return false"></a></div>
+      </div>
+      <div class="ai-sec"><h4>Черновик ответа</h4>
+        <div class="ai-ask"><input type="text" id="ai-hint" placeholder="О чём ответить (необязательно)" onkeydown="if(event.key==='Enter')aiDraft(MX.reply?MX.reply.id:null)"><button class="b fit" onclick="aiDraft(MX.reply ? MX.reply.id : null)">Набросать</button></div>
+        <div class="hint">Черновик вставляется в поле ввода — отправляете вы сами. Выделите текст в переписке — появятся «Найти везде» (все чаты, почта, ITSM, вики), «Спросить ИИ» (ответ по всем
+          источникам) и ⤢ — открыть вопрос в «Ассистенте» на весь экран.</div>
+      </div>
+      <div id="ai-cards"></div>
+    </div>
+  </aside>
+</div>
+<!-- Ассистент: отдельный чат с ИИ по всем источникам, история запросов -->
+<div class="asst" id="asst">
+  <aside class="as-side">
+    <div class="as-top"><button class="b p" onclick="asNew()" style="flex:1">＋ Новая беседа</button></div>
+    <div class="as-top"><input type="text" id="as-q" placeholder="Поиск по истории" autocomplete="off"></div>
+    <div class="as-kinds seg" id="as-kinds"><button data-k="" class="on">Все</button><button data-k="free">Беседы</button><button data-k="selection">Выделенное</button><button data-k="chat">ИИ в чате</button><button data-k="digest">Сводки</button><button data-k="feedback">Отзывы</button></div>
+    <div class="as-list" id="as-list"></div>
+  </aside>
+  <div class="as-main">
+    <div class="as-head" id="as-head"></div>
+    <div class="as-msgs" id="as-msgs"></div>
+    <div class="as-comp">
+      <div class="as-ctx" id="as-ctx"></div>
+      <div class="as-opts">
+        <span class="hint">Искать в:</span>
+        <label><input type="checkbox" data-as="telegram" checked> Telegram — все чаты</label>
+        <span id="as-src-list"></span>
+        <label title="Вопрос — прямо в Maverick, как в его чате на портале: он сам выбирает плагины, помнит беседу, может спросить или приложить файл"><input type="checkbox" id="as-mav"> 🛰 Maverick как на портале</label>
+        <select id="as-period" title="За какой период искать в Telegram"><option value="all">за всё время</option><option value="day">сутки</option><option value="3d">3 дня</option><option value="week">неделя</option><option value="month">месяц</option><option value="quarter">3 месяца</option></select>
+        <select id="as-prov" title="Какая модель отвечает"></select>
+      </div>
+      <div class="as-files" id="as-files"></div>
+      <div class="as-row"><button class="b ib" id="as-att" onclick="$('as-file').click()" title="Приложить файл или картинку (можно перетащить или вставить Ctrl+V)">📎</button>
+        <input type="file" id="as-file" multiple hidden onchange="asAttach(this.files);this.value=''">
+        <textarea id="as-in" rows="2" placeholder="Вопрос по всем источникам или указание («поставь всем чатам с „авария“ режим инцидент», «запомни, что…»). Enter — отправить" data-voice="inline"></textarea>
+        <button class="b p" id="as-send" aria-label="Отправить вопрос" onclick="asAsk()">➤</button></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="mx-menu" id="mx-menu"></div>
+<div class="mx-menu" id="mx-sendmenu"><button data-s="silent">🔕 Отправить без звука</button><button data-s="later">🕓 Отправить позже…</button>
+  <div id="mx-later" style="display:none;padding:6px 12px"><input type="datetime-local" id="mx-later-at" style="width:auto"><button class="b p" style="margin-left:6px" data-s="later-go">Запланировать</button></div></div>
+<div class="mx-selbar" id="mx-selbar"></div>
+<div class="mx-srcpick" id="mx-srcpick"></div>
+<div class="mx-view" id="mx-view"></div>
+<div class="mx-toast" id="mx-toast"></div>
+
+<div class="modal" id="mx-fwd">
+  <div class="mbox auto" style="width:min(460px,94vw)">
+    <div class="mhead"><b>Переслать в…</b><button class="x" onclick="$('mx-fwd').classList.remove('on')" title="Закрыть">×</button></div>
+    <input type="text" id="fwd-q" placeholder="Поиск чата" autocomplete="off">
+    <div class="mx-pick" id="fwd-list"></div>
+  </div>
+</div>
+
+<div class="modal" id="fb-modal">
+  <div class="mbox auto" style="width:min(620px,94vw)">
+    <div class="mhead"><b id="fb-title">Отзыв</b><button class="x" onclick="$('fb-modal').classList.remove('on')" title="Закрыть">×</button></div>
+    <div class="hint" style="margin-top:0">Что было хорошо, что плохо, что поменять. Программа запомнит: поправки станут правилами и статьями глоссария
+      и будут учитываться в следующих отчётах и ответах. Если что-то неясно — спросит в ассистенте.</div>
+    <div class="seg" id="fb-rate" style="margin:10px 0"><button data-r="1">👍 Хорошо</button><button data-r="-1">👎 Плохо</button><button data-r="0" class="on">✎ Поправить</button></div>
+    <textarea id="fb-text" rows="4" placeholder="Например: «INC0012345 — это номер обращения в ITSM, а не инцидент-чат», «болталку в сводку не включай», «хорошо, что выделил, кто ждёт ответа»" data-voice></textarea>
+    <details style="margin-top:8px"><summary class="hint" style="cursor:pointer">Что оцениваете</summary><pre class="sent" id="fb-excerpt"></pre></details>
+    <div class="msg" id="fb-msg"></div><div class="log" id="fb-log"></div>
+    <div class="actions"><button class="b p" id="fb-send" onclick="fbSend()">Отправить отзыв</button></div>
+  </div>
+</div>
+
+<div class="modal" id="dg-cf">
+  <div class="mbox auto" style="width:min(680px,94vw)">
+    <div class="mhead"><b>Проверьте перед запуском сводки</b><button class="x" onclick="dgCfClose()" title="Закрыть">×</button></div>
+    <div id="dg-cf-body"><div class="hint"><span class="spin"></span> Считаю…</div></div>
+    <div class="actions"><button class="b p" id="dg-cf-go" onclick="dgCfGo()">Всё верно — запустить</button>
+      <button class="b" onclick="dgCfClose()">Изменить</button>
+      <button class="b" id="dg-cf-check" onclick="dgCfCheck()" title="Спросить у Maverick, подключены ли выбранные плагины">↻ Проверить подключение плагинов</button>
+      <button class="b" id="dg-cf-save" onclick="dgPresetSave()" title="Запомнить эти настройки: период, чаты, указания, плагины — и выбирать их одним нажатием" style="margin-left:auto">💾 Сохранить как шаблон</button></div>
+    <div class="log" id="dg-cf-log"></div>
+  </div>
+</div>
+
+<div class="modal" id="tk-modal">
+  <div class="mbox auto" style="width:min(760px,94vw)">
+    <div class="mhead"><b>Задачи</b><button class="b" onclick="tasksLoad()" title="Обновить список">↻</button><button class="x" onclick="tasksClose()" title="Закрыть">×</button></div>
+    <div class="hint" style="margin-top:0">Долгие задачи программа доводит до конца сама: после перезапуска (сбой, сон компьютера,
+      обновление, «Выход» и новый запуск) и после ошибок (нет связи, модель не ответила — повтор через 1, 2, 5… 30 минут).
+      Сделанное раньше не повторяется. Закончить задачу раньше — «Остановить».</div>
+    <div id="tk-list"></div>
+    <div class="tk-now" id="tk-now"></div>
+    <div class="actions" style="margin-top:6px"><button class="b" id="tk-stop-all" onclick="tasksStopAll()"
+      title="Остановить все задачи (долгие — на паузу), оборвать запросы к моделям и закрыть открытые сессии Maverick">⏹ Остановить всё и закрыть сессии Maverick</button></div>
+    <div class="log" id="tk-stop-log"></div>
+    <hr>
+    <label class="tk-set" id="tk-awake-row"><input type="checkbox" id="tk-awake" onchange="tasksSet('keep_awake', this.checked)">
+      <span>Не давать компьютеру засыпать, пока идёт любая задача (сводка, ИИ, ассистент, выгрузка, описания)
+      <small class="pill" id="tk-awake-now"></small><br>
+      <span class="hint">Экран: <select class="tk-sel" id="tk-display" onchange="tasksSet('keep_display', this.value)">
+        <option value="auto">авто — не гасить на ноутбуке с Modern Standby и после первого сна посреди задач</option>
+        <option value="on">не гасить, пока идут задачи</option>
+        <option value="off">гаснет как обычно</option></select></span><br>
+      <small class="hint">На большинстве современных ноутбуков (Modern Standby) сон наступает вместе с выключением экрана, а от
+      батареи Windows через несколько минут перестаёт слушать запрет сна — поэтому задачи и стояли. Пока экран включён,
+      компьютер не спит ни от сети, ни от батареи. Сам экран при этом не заблокируется по таймеру — уходя, нажмите
+      <b>Win+L</b>. Крышку не закрывайте: явный сон (крышка, кнопка питания) Windows выполнит всё равно, задачи
+      продолжатся после пробуждения.</small>
+      <div class="tk-sleep" id="tk-power"></div><div class="tk-sleep" id="tk-sleeps"></div></span></label>
+    <label class="tk-set" id="tk-auto-row"><input type="checkbox" id="tk-auto" onchange="tasksSet('autostart', this.checked)">
+      <span>Запускать OpsDigest при входе в Windows<br><small class="hint">После перезагрузки откроется окно с паролем —
+      и прерванные задачи продолжатся.</small></span></label>
+    <div class="msg warn" id="tk-sup" style="display:none">Программа запущена без сторожа (не через OpsDigest.bat) — после сбоя
+      она не поднимется сама. Запускайте OpsDigest.bat.</div>
+  </div>
+</div>
+<div class="modal" id="upd-modal">
+  <div class="mbox auto" style="width:min(640px,94vw)">
+    <div class="mhead"><b>Обновление OpsDigest</b><button class="x" onclick="$('upd-modal').classList.remove('on')" title="Закрыть">×</button></div>
+    <div id="upd-info"></div>
+    <div class="actions"><button class="b p" id="upd-go" onclick="updInstall(false)" disabled>Обновить и перезапустить</button>
+      <button class="b" onclick="$('upd-info').innerHTML='<span class=&quot;spin&quot;></span>Проверяю…';updCheck(false)">Проверить ещё раз</button></div>
+    <div class="hint">Настройки, переписка и отчёты в рабочей папке не меняются. Старые файлы программы сохраняются —
+      если новая версия не запустится за 3 минуты, вернётся прежняя. После перезапуска введите пароль, если включена защита.</div>
+    <div class="log" id="upd-log"></div>
+    <div class="msg" id="upd-msg"></div>
+    <div id="upd-tok-box"><hr>
+      <h3 style="margin:0 0 6px;font-size:15px">Доступ к GitHub</h3>
+      <div class="hint" id="upd-tok-help" style="display:none">Репозиторий закрытый, поэтому программе нужен токен только на чтение:
+        github.com → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token;
+        Resource owner — владелец репозитория (<b id="upd-owner">организация</b>); Repository access — Only select repositories →
+        <b id="upd-repo">репозиторий программы</b>; Permissions → Contents: <b>Read-only</b>. У каждого — свой токен: чужим не пользуйтесь.
+        Токен хранится в настройках рабочей папки (зашифрован вместе с ними).</div>
+      <div class="row" style="margin-top:8px"><input type="password" id="upd-tok" placeholder="github_pat_…" autocomplete="off"><button class="b fit" onclick="updToken()">Сохранить токен</button></div>
+    </div>
+    <hr>
+    <h3 style="margin:0 0 6px;font-size:15px">Если GitHub из программы недоступен</h3>
+    <div class="hint">Откройте репозиторий в браузере → Code → Download ZIP и укажите скачанный архив.</div>
+    <div class="hint" id="upd-zips"></div>
+    <div class="row" style="margin-top:8px"><input type="text" id="upd-zip" placeholder="C:\Users\…\Downloads\mypunchagent-main.zip"><button class="b fit" id="upd-zip-go" onclick="updInstall(true)">Установить из архива</button></div>
+  </div>
+</div>
+
+<div id="restart"><div><span class="spin"></span><span id="restart-t">Перезапускаю OpsDigest с новой версией… Окно обновится само.</span></div></div>
+
+<div id="lock"><div class="lbox">
+  <div class="sub" id="lk-setup">
+    <h2>Защита данных</h2>
+    <p class="hint" style="margin-top:0">Придумайте пароль для запуска программы и короткий ПИН для разблокировки после
+    перерыва. Переписка, файлы и отчёты в рабочей папке будут зашифрованы — в Проводнике их не открыть.</p>
+    <label>Пароль (от 8 символов)</label><input type="password" id="ls-pw" autocomplete="new-password">
+    <label>Пароль ещё раз</label><input type="password" id="ls-pw2" autocomplete="new-password">
+    <div class="grid2"><div><label>ПИН (4 цифры)</label><input type="password" id="ls-pin" inputmode="numeric" maxlength="6"></div>
+    <div><label>Блокировать через, минут</label><input type="number" id="ls-min" value="10" min="1" max="120"></div></div>
+    <label class="check"><input type="checkbox" id="ls-tg" checked> Открывать данные только после входа в Telegram</label>
+    <div class="hint">Пароль откроет переписку, только если в программе выполнен вход в вашу учётку Telegram.
+    На компьютере, где Telegram из программы пока не подключается (данные — из экспорта), снимите галочку — иначе
+    данные не откроются. Потом снять условие можно только после входа в Telegram или кодом восстановления.</div>
+    <div class="actions"><button class="b p" id="ls-btn" onclick="setupVault()">Включить защиту</button></div>
+    <div class="msg" id="ls-msg"></div>
+  </div>
+  <div class="sub" id="lk-code">
+    <h2>Код восстановления</h2>
+    <p class="hint" style="margin-top:0">Запишите код и храните отдельно от ноутбука (например, дома). Он нужен, если
+    забудете пароль. Без пароля и без кода данные не открыть никому — даже вам.</p>
+    <div class="rcode" id="lc-code"></div>
+    <label class="check"><input type="checkbox" id="lc-ok" onchange="$('lc-btn').disabled=!this.checked"> Я записал код</label>
+    <div class="log on" id="lc-log" style="max-height:140px"></div>
+    <div class="actions"><button class="b p" id="lc-btn" disabled onclick="codeDone()">Продолжить</button></div>
+  </div>
+  <div class="sub" id="lk-full">
+    <h2>OpsDigest</h2>
+    <p class="hint" style="margin-top:0">Данные зашифрованы. Введите пароль.</p>
+    <input type="password" id="lf-pw" autocomplete="current-password" onkeydown="if(event.key==='Enter')unlockPw()">
+    <div class="actions"><button class="b p" id="lf-btn" onclick="unlockPw()">Открыть</button>
+    <button class="b" onclick="lockShow('recover')">Забыли пароль?</button></div>
+    <div class="msg" id="lf-msg"></div>
+  </div>
+  <div class="sub" id="lk-recover">
+    <h2>Вход по коду восстановления</h2>
+    <label>Код восстановления</label><input type="text" id="lr-code" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX">
+    <label>Новый пароль (от 8 символов)</label><input type="password" id="lr-pw">
+    <div class="actions"><button class="b p" onclick="recoverPw()">Открыть и сменить пароль</button><button class="b" onclick="lockShow('full')">Назад</button></div>
+    <div class="msg" id="lr-msg"></div>
+  </div>
+  <div class="sub" id="lk-pin">
+    <h2>Программа заблокирована</h2>
+    <p class="hint" style="margin-top:0">Введите ПИН. Фоновые задачи (выгрузка, синхронизация) продолжают работать.</p>
+    <input type="password" id="lp-pin" class="pin" inputmode="numeric" maxlength="6" oninput="pinInput()" onkeydown="if(event.key==='Enter')unlockPin()">
+    <div class="actions"><button class="b p" onclick="unlockPin()">Открыть</button><button class="b" onclick="lockNow(true)">Войти по паролю</button></div>
+    <div class="msg" id="lp-msg"></div>
+  </div>
+</div></div>
+
+<div class="modal" id="fs-modal">
+  <div class="mbox">
+    <div class="mhead"><b>Выбор папки</b><button class="x" onclick="fsClose()" title="Закрыть">×</button></div>
+    <div class="places" id="fs-places"></div>
+    <div class="row"><button class="b fit" onclick="fsUp()">⬆ Наверх</button><input type="text" id="fs-cur" onkeydown="if(event.key==='Enter')fsLoad(this.value)" placeholder="Путь к папке"></div>
+    <div class="fslist" id="fs-list"></div>
+    <div class="row" style="margin-top:10px"><input type="text" id="fs-new" placeholder="Имя новой папки, например OpsDigest" onkeydown="if(event.key==='Enter')fsMkdir()"><button class="b fit" onclick="fsMkdir()">+ Создать папку здесь</button></div>
+    <div class="msg" id="fs-msg"></div>
+    <div class="actions"><button class="b p" onclick="fsChoose()">Выбрать эту папку</button><button class="b" onclick="fsClose()">Отмена</button><span class="hint" id="fs-sel"></span></div>
+  </div>
+</div>
+
+<div class="modal" id="chat-modal">
+  <div class="mbox">
+    <div class="mhead"><b id="cm-title">Чат</b><button class="x" onclick="closeChat()" title="Закрыть">×</button></div>
+    <div class="hint" id="cm-info" style="margin-top:-6px"></div>
+    <div class="seg cm-tabs" id="cm-tabs"><button data-t="desc" class="on">Описание</button><button data-t="topics" id="cm-tab-topics">Темы</button><button data-t="people">Участники</button><button data-t="images">Изображения</button></div>
+    <div class="cm-pane on" id="cm-p-desc">
+      <div class="grid2">
+        <div><label>Важность</label><select id="cm-prio"></select></div>
+        <div><label>Режим</label><select id="cm-mode"></select></div>
+      </div>
+      <label class="check"><input type="checkbox" id="cm-excl"> Исключить: не включать в сводки, поиск и выгрузку истории</label>
+      <div class="ed2" style="margin-top:6px">
+        <div><label>Ваше описание чата <button class="tplb" data-tpl="chat" data-target="cm-desc">📋 Шаблоны</button></label>
+          <textarea id="cm-desc" class="desc" style="min-height:170px" placeholder="Моя роль в чате… За чем следить… На что не обращать внимания…"></textarea>
+          <div class="hint">Например: «Команда поддержки. Важно: новые обращения, вопросы ко мне, сроки и текущие инциденты. Не важно: общие объявления».</div></div>
+        <div><label>Анализ ИИ (дополняет ваше описание) <span class="hint" id="cm-ai-at"></span> <span id="cm-fb"></span></label>
+          <textarea id="cm-ai" class="desc" style="min-height:170px" placeholder="Пусто — нажмите «✦ Описать ИИ»"></textarea>
+          <div class="hint">Можно поправить руками. Повторный анализ меняет только этот текст.</div></div>
+      </div>
+      <div class="actions"><button class="b p" onclick="saveChat()">Сохранить</button><button class="b" onclick="cmAiNow()">✦ Описать ИИ</button><span class="hint" id="cm-saved"></span></div>
+      <div class="log" id="cm-ai-log"></div>
+    </div>
+    <div class="cm-pane" id="cm-p-topics">
+      <div class="actions" style="margin-top:0"><button class="b" onclick="cmTopics(true)">Обновить список тем из Telegram</button>
+        <button class="b" onclick="cmTopicsAi(false)">✦ Описать ИИ темы без описания</button></div>
+      <div class="msg" id="cm-t-msg"></div><div class="log" id="cm-t-log"></div>
+      <div class="tablewrap" style="max-height:none"><table><thead><tr><th>Тема</th><th>Сообщ.</th><th>Активность</th><th>Важность</th><th>Искл.</th><th></th></tr></thead><tbody id="cm-topics"></tbody></table></div>
+    </div>
+    <div class="cm-pane" id="cm-p-people">
+      <div class="actions" style="margin-top:0"><input type="text" id="cm-m-q" placeholder="Поиск участника" style="flex:1;min-width:160px">
+        <button class="b" onclick="cmMembers(true)">Загрузить список из Telegram</button>
+        <button class="b" onclick="cmMembersAi(false)">✦ Описать ИИ людей (по всем чатам)</button>
+        <button class="b" onclick="cmMembersAi(true)">✦ Роли в этом чате</button></div>
+      <div class="msg" id="cm-m-msg"></div><div class="log" id="cm-m-log"></div>
+      <div class="tablewrap" style="max-height:none"><table><thead><tr><th>Участник</th><th>Сообщ.</th><th>Писал</th><th>Приоритет</th><th>Роль в этом чате</th><th></th></tr></thead><tbody id="cm-members"></tbody></table></div>
+    </div>
+    <div class="cm-pane" id="cm-p-images">
+      <div class="hint" id="cm-img"></div>
+      <div class="row" style="margin-top:10px;flex-wrap:wrap">
+        <div class="seg fit" id="cm-when"><button data-v="all" class="on">За всё время</button><button data-v="since">С даты</button></div>
+        <input type="date" id="cm-since" class="fit" style="display:none;max-width:170px">
+      </div>
+      <div class="actions"><button class="b p" id="cm-img-btn" onclick="chatImages()">Прочитать изображения</button>
+      <button class="b" id="cm-img-stop" onclick="stopJob('images')" style="display:none">Остановить</button>
+      <button class="b" id="cm-exp-btn" onclick="exportChat()">Выгрузить историю этого чата</button></div>
+      <div class="hint">Нескачанные изображения сначала скачиваются из Telegram, уже описанные — не описываются повторно.</div>
+      <div class="log" id="cm-log"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="person-modal">
+  <div class="mbox">
+    <div class="mhead"><b id="pm-title">Человек</b><button class="x" onclick="$('person-modal').classList.remove('on')" title="Закрыть">×</button></div>
+    <div class="hint" id="pm-info" style="margin-top:-6px"></div>
+    <div style="flex:1;overflow:auto;padding-right:4px">
+      <div class="grid2">
+        <div><label>Как называть</label><input type="text" id="pm-name"></div>
+        <div><label>Приоритет для вас</label><select id="pm-prio"></select></div>
+      </div>
+      <div class="grid2">
+        <div><label>Должность</label><input type="text" id="pm-post" placeholder="из вики / адресной книги или вручную"></div>
+        <div><label>Подразделение, команда</label><input type="text" id="pm-dept"></div>
+      </div>
+      <label>Контакты (телефоны, почта, Rooms)</label><input type="text" id="pm-contacts">
+      <div class="hint" id="pm-card"></div>
+      <div class="ed2" style="margin-top:4px">
+        <div><label>Зона ответственности <button class="tplb" data-tpl="person.area" data-target="pm-area">📋 Шаблоны</button></label><textarea id="pm-area" class="desc"></textarea></div>
+        <div><label>С чем к нему обращаться <button class="tplb" data-tpl="person.ask" data-target="pm-ask">📋 Шаблоны</button></label><textarea id="pm-ask" class="desc"></textarea></div>
+        <div><label>С чем он приходит ко мне <button class="tplb" data-tpl="person.comes" data-target="pm-comes">📋 Шаблоны</button></label><textarea id="pm-comes" class="desc"></textarea></div>
+        <div><label>Заметки <button class="tplb" data-tpl="person.note" data-target="pm-note">📋 Шаблоны</button></label><textarea id="pm-note" class="desc"></textarea></div>
+      </div>
+      <div id="pm-role-box" class="ed2" style="margin-top:4px">
+        <div><label><span id="pm-role-t">Роль в чате</span> <button class="tplb" data-tpl="person.role" data-target="pm-role">📋 Шаблоны</button></label><textarea id="pm-role" class="desc" placeholder="Чем занимается в этом чате, что берёт на себя"></textarea></div>
+        <div><label>Роль в чате — по мнению ИИ</label><textarea id="pm-role-ai" class="desc"></textarea></div>
+      </div>
+      <label>Как его называют в чатах (через запятую) — помогает обезличиванию и поиску</label><input type="text" id="pm-aliases" placeholder="Ваня, Петрович">
+      <label>Анализ ИИ — по его сообщениям во всех чатах <span class="hint" id="pm-ai-at"></span> <span id="pm-fb"></span></label><textarea id="pm-ai" class="desc" placeholder="Пусто — нажмите «✦ Описать ИИ»"></textarea>
+      <label>Где встречается</label><div id="pm-chats"></div>
+    </div>
+    <div class="actions"><button class="b p" onclick="personSave()">Сохранить</button><button class="b" onclick="personAi()">✦ Описать ИИ</button><span class="hint" id="pm-saved"></span></div>
+    <div class="log" id="pm-log"></div>
+  </div>
+</div>
+
+<div class="modal" id="ai-modal">
+  <div class="mbox auto" style="width:min(560px,94vw)">
+    <div class="mhead"><b>✦ Описать ИИ</b><button class="x" onclick="$('ai-modal').classList.remove('on')" title="Закрыть">×</button></div>
+    <div>Что описать: <b id="ai-what"></b></div>
+    <div class="hint">Ваши описания не меняются — ИИ пишет свою часть ниже. Каждый пункт — один запрос к модели; всё, что уходит
+    во внешнюю модель, обезличивается. Задачу можно остановить: готовое сохраняется сразу.</div>
+    <label>Модель</label><select id="ai-prov2"></select>
+    <label class="check" id="ai-w-topics"><input type="checkbox" id="ai-o-topics" checked> и темы форумов этих чатов</label>
+    <div id="ai-w-people"><label class="check"><input type="checkbox" id="ai-o-people"> и людей, которые в них пишут (общее описание — по всем чатам)</label>
+      <label class="check"><input type="checkbox" id="ai-o-roles"> и роли этих людей в каждом из чатов</label></div>
+    <label class="check" id="ai-w-mode"><input type="checkbox" id="ai-o-mode" checked> ставить режим «авария / алерты / новости», если ИИ так решил (только чатам с режимом «рабочий»)</label>
+    <label class="check"><input type="checkbox" id="ai-o-over"> описать заново то, что ИИ уже описывал</label>
+    <div class="hint" style="margin-top:8px">Искать также в других источниках (через плагины Maverick): вики — назначение чатов, команды, должности;
+      почта — адресная книга (должности, подразделения, контакты); ITSM и трекер — номера из переписки; Rooms и встречи — обсуждения.</div>
+    <div id="ai-o-src" style="display:flex;flex-wrap:wrap;gap:2px 14px"></div>
+    <div class="actions"><button class="b p" onclick="chAiGo()">Запустить</button><button class="b" onclick="$('ai-modal').classList.remove('on')">Отмена</button></div>
+  </div>
+</div>
+<div class="tpl-menu" id="tpl-menu"></div>
+
+<div class="modal" id="gl-modal">
+  <div class="mbox">
+    <div class="mhead"><b id="ge-title">Термин</b><button class="x" onclick="$('gl-modal').classList.remove('on')" title="Закрыть">×</button></div>
+    <div style="flex:1;overflow:auto;padding-right:4px">
+      <div class="grid2">
+        <div><label>Термин</label><input type="text" id="ge-term"></div>
+        <div class="row"><div><label>Вид</label><select id="ge-kind"></select></div>
+          <div><label>Статус</label><select id="ge-status"><option value="confirmed">подтверждён</option><option value="draft">черновик ИИ</option><option value="hidden">скрыт (не использовать)</option></select></div></div>
+      </div>
+      <label class="check"><input type="checkbox" id="ge-pin"> Подставлять в каждый запрос к модели (даже если слова нет в тексте)</label>
+      <label>Другие написания, сокращения, формы (через запятую)</label><input type="text" id="ge-aliases" placeholder="инц, INC, инцидента">
+      <label>Коротко: что это</label><input type="text" id="ge-summary">
+      <label>Значения и как их различать <button class="tplb" type="button" onclick="glSenses([...glSensesRead(true), {}])">＋ значение</button></label>
+      <div id="ge-senses"></div>
+      <div class="grid2"><div><label>Кто отвечает (команда, человек)</label><input type="text" id="ge-owner"></div>
+        <div><label>Связанные термины (через запятую)</label><input type="text" id="ge-related"></div></div>
+      <label>Подробнее: инструкции, решения, ссылки</label><textarea id="ge-details" class="desc"></textarea>
+      <label>Примеры употребления (по одному в строке)</label><textarea id="ge-examples" class="desc" style="min-height:52px"></textarea>
+      <label>Ссылки на вики (по одной в строке: адрес, затем через пробел — название)</label><textarea id="ge-links" class="desc" style="min-height:44px" placeholder="https://wiki.example/pages/123 Как устроен auth-svc"></textarea>
+      <label>Как выглядит (экран, ошибка, схема — чтобы узнавать на скриншотах)</label><textarea id="ge-visual" class="desc" style="min-height:60px" placeholder="Например: окно входа ЛК с красной плашкой «Сервис временно недоступен», код 502"></textarea>
+      <label>Иллюстрации <button class="tplb" type="button" onclick="glImages(true)">🖼 Подобрать по описаниям картинок</button></label>
+      <div class="thumbs" id="ge-imgs"></div><div class="hint" id="ge-imgs-hint"></div><div class="thumbs" id="ge-cand"></div>
+      <label>Где встречалось</label><div id="ge-refs"></div>
+      <div class="hint" id="ge-wiki-out" style="margin-top:8px"></div>
+    </div>
+    <div class="actions"><button class="b p" onclick="glSave()">Сохранить</button><button class="b" onclick="glSuggest()">✦ Предложить по переписке</button>
+      <button class="b" onclick="glWikiEd()" title="Maverick: Confluence, ITSM">🔎 Найти в вики</button>
+      <button class="b" id="ge-del" onclick="glDel()" style="margin-left:auto">Удалить</button><span class="hint" id="ge-saved"></span></div>
+  </div>
+</div>
+
+<script src="/static/messenger.js"></script>
+<script src="/static/chats.js"></script>
+<script src="/static/glossary.js"></script>
+<script src="/static/tasks.js"></script>
+<script src="/static/modules.js"></script>
+<script src="/static/assistant.js"></script>
+<script src="/static/creds.js"></script>
+<script src="/static/skill.js"></script>
+<script src="/static/voice.js"></script>
+<script src="/static/digest.js"></script>
+<script src="/static/digest_source.js"></script>
+<script>
+const T = (location.hash.match(/t=([\w-]+)/) || [])[1] || sessionStorage.getItem('opsdigest_t') || '';
+const OPEN_LINK = decodeURIComponent((location.hash.match(/open=([^&]+)/) || [])[1] || '');  // ссылка из отчёта
+if (T) { sessionStorage.setItem('opsdigest_t', T); history.replaceState(null, '', location.pathname); }
+let ST = {}, CFG = {}, CHATS = [], LLMK = 'local', PERIOD = 'day';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// Не больше NET.max запросов окна к программе одновременно. У браузера на программу всего 6 соединений: если все
+// заняты медленными ответами (тяжёлый список, ожидание базы), проверка связи не проходит и окно ошибочно пишет
+// «связь прервалась», а ход сводки «теряется». Проверка связи и картинки идут мимо очереди — им всегда есть место.
+const NET = {max: 4, active: 0, q: []};
+function netTake() { if (NET.active < NET.max) { NET.active++; return Promise.resolve(); } return new Promise(r => NET.q.push(r)); }
+function netGive() { if (NET.q.length) NET.q.shift()(); else NET.active--; }
+async function netFetch(path, opt) { await netTake(); try { return await fetch(path, opt); } finally { netGive(); } }
+async function api(path, body, timeoutMs=0) {
+  const opt = {method: body === undefined ? 'GET' : 'POST', headers: {'X-Token': T}};
+  if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+  const controller = timeoutMs ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : 0;
+  if (controller) opt.signal = controller.signal;
+  let r;
+  try { r = await netFetch(path, opt); } catch (e) {
+    if (e && e.name === 'AbortError') throw new Error('проверка заняла слишком много времени — проверьте доступ к GitHub и повторите');
+    // программа перезапускается (сторож поднимает её сам) или компьютер только проснулся — подождать и повторить
+    if (!(await reconnect())) throw new Error('программа не отвечает — запустите OpsDigest.bat');
+    try { r = await netFetch(path, opt); } catch (e2) { throw new Error('программа не отвечает — запустите OpsDigest.bat'); }
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+  if (r.status === 403) linkBanner('Это окно от прошлого запуска программы. Откройте OpsDigest.bat — появится новое окно.', 'bad');
+  const j = await r.json().catch(() => ({ok: false, error: 'ошибка сервера ' + r.status}));
+  if (r.status === 423 && j.locked) { lockState(j.locked); throw new Error(j.error || 'программа заблокирована'); }
+  if (!j.ok) throw new Error(j.error || 'ошибка');
+  return j;
+}
+
+// ---------------------------------------------------------------- защита: вход, ПИН, блокировка по бездействию
+let LOCKED = null, PIN_LEN = 4, LAST_INPUT = Date.now(), LAST_BEACON = 0;
+function lockShow(which) {
+  $('lock').classList.toggle('on', !!which);
+  document.querySelectorAll('#lock .sub').forEach(x => x.classList.toggle('on', x.id === 'lk-' + which));
+  const f = {full: 'lf-pw', pin: 'lp-pin', setup: 'ls-pw', recover: 'lr-code'}[which];
+  if (f) setTimeout(() => { const el = $(f); if (el) { el.value = ''; el.focus(); } }, 50);
+}
+function lockState(st) {
+  if (st === LOCKED && $('lock').classList.contains('on')) return;
+  LOCKED = st;
+  if (st === 'full' || st === 'pin') lockShow(st); else lockShow(null);
+  $('tg-banner').classList.toggle('on', st === 'telegram');
+}
+async function setupVault() {
+  if ($('ls-pw').value !== $('ls-pw2').value) return msg('ls-msg', 'Пароли не совпадают.', 'bad');
+  busy('ls-btn', true, 'Включаю…');
+  try {
+    const j = await api('/api/vault/setup', {password: $('ls-pw').value, password2: $('ls-pw2').value, pin: $('ls-pin').value, lock_minutes: $('ls-min').value, require_telegram: $('ls-tg').checked});
+    $('lc-code').textContent = j.recovery; lockShow('code');
+    poll(j.job, 'lc-log', () => {});
+  } catch (e) { msg('ls-msg', e.message, 'bad'); }
+  busy('ls-btn', false);
+}
+async function codeDone() { lockShow(null); LOCKED = null; await refresh(); go(firstStep()); }
+async function unlockPw() {
+  busy('lf-btn', true, 'Проверяю…');
+  try { await api('/api/vault/unlock', {password: $('lf-pw').value}); msg('lf-msg', ''); LOCKED = null; lockShow(null); await afterUnlock(); }
+  catch (e) { msg('lf-msg', e.message, 'bad'); $('lf-pw').select(); }
+  busy('lf-btn', false);
+}
+async function recoverPw() {
+  try { await api('/api/vault/recover', {code: $('lr-code').value, password: $('lr-pw').value}); LOCKED = null; lockShow(null); await afterUnlock(); }
+  catch (e) { msg('lr-msg', e.message, 'bad'); }
+}
+function pinInput() { const v = $('lp-pin').value.replace(/\D/g, ''); $('lp-pin').value = v; if (v.length >= PIN_LEN) unlockPin(); }
+async function unlockPin() {
+  try { await api('/api/vault/pin', {pin: $('lp-pin').value}); msg('lp-msg', ''); LOCKED = null; lockShow(null); LAST_INPUT = Date.now(); await refresh(); }
+  catch (e) { msg('lp-msg', e.message, 'bad'); $('lp-pin').value = ''; if (/полностью/.test(e.message)) { await refresh(); } }
+}
+async function lockNow(full) { try { await api('/api/vault/lock', full ? {full: true} : {}); } catch (e) {} lockState(full ? 'full' : 'pin'); }
+async function afterUnlock() { await refresh(); $('ws-path').value = ST.workspace || ST.default_workspace; go(firstStep()); mxAuto(); glBadgeRefresh(); }
+function activity() {
+  LAST_INPUT = Date.now();
+  if (!LOCKED && ST.vault && ST.vault.enabled && Date.now() - LAST_BEACON > 30000) { LAST_BEACON = Date.now(); api('/api/vault/activity', {}).catch(() => {}); }
+}
+['mousemove', 'keydown', 'mousedown', 'wheel', 'touchstart'].forEach(ev => document.addEventListener(ev, activity, {passive: true}));
+setInterval(() => {  // окно свернули/отошли: блокируем по таймеру и на стороне окна
+  const v = ST.vault || {};
+  if (!LOCKED && v.enabled && v.lock_minutes && Date.now() - LAST_INPUT > v.lock_minutes * 60000) lockNow(false);
+}, 15000);
+function msg(id, text, kind) { const m = $(id); m.className = 'msg ' + (kind || 'info'); m.textContent = text; if (!text) m.className = 'msg'; }
+function busy(btn, on, label) {
+  const b = typeof btn === 'string' ? $(btn) : btn; if (!b) return;
+  b.setAttribute('aria-busy', String(on));
+  if (on) { b.dataset.t = b.innerHTML; b.disabled = true; b.innerHTML = '<span class="spin"></span>' + (label || 'Подождите…'); }
+  else { b.disabled = false; if (b.dataset.t) b.innerHTML = b.dataset.t; }
+}
+async function poll(id, logEl, onDone) {
+  let since = 0; const box = logEl ? $(logEl) : null;
+  if (box) { box.textContent = ''; box.classList.add('on'); }
+  let fails = 0;
+  while (true) {
+    let j;
+    try { j = await api('/api/jobs/' + id + '?since=' + since); fails = 0; }
+    catch (e) {  // программа перезапустилась: задача продолжается под новым номером (см. «Задачи»)
+      if (/задача не найдена/.test(e.message)) {
+        if (box) box.textContent += '↻ Программа перезапустилась — задача продолжается, ход виден в «Задачах».\n';
+        return onDone({status: 'lost', log: [], log_total: since});
+      }
+      // разовая ошибка ответа — не бросать слежение за задачей: она идёт на сервере
+      if (++fails > 8) throw e;
+      await new Promise(r => setTimeout(r, 3000));
+      continue;
+    }
+    if (box && j.log.length) { box.textContent += j.log.join('\n') + '\n'; box.scrollTop = box.scrollHeight; }
+    since = j.log_total;
+    if (j.status !== 'running') return onDone(j);
+    await new Promise(r => setTimeout(r, 900));
+  }
+}
+
+// ---------------------------------------------------------------- навигация
+function go(p) {
+  if (LOCKED === 'telegram' && !['ws', 'tg', 'login', 'diag', 'sec', 'mods'].includes(p)) p = 'login';
+  // «Сводка» и «Глоссарий» — отдельные разделы (вкладки вверху); остальные страницы — внутри «Настроек»
+  if (['digest', 'rpa', 'gl'].includes(p) && typeof MX !== 'undefined' && MX.mode !== p && uiMods()[p]) return setMode(p);
+  if (!['digest', 'rpa', 'gl'].includes(p) && typeof MX !== 'undefined' && MX.mode !== 'set') return setMode('set', p);
+  showPage(p);
+}
+function showPage(p) {
+  if (!['digest', 'rpa', 'gl'].includes(p)) LAST_SET = p;
+  if (p === 'rpa') rpaLoad();
+  if (p === 'src') srcLoad();
+  if (p === 'mods') modsRender();
+  if (p === 'creds') crLoad();
+  if (p === 'sec') fillSec();
+  document.querySelectorAll('.page').forEach(x => x.classList.toggle('on', x.id === 'p-' + p));
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x.dataset.p === p));
+  if (p === 'digest') { loadReports(); readiness(); dgSrcFill(); dgShow(); }
+  if (p === 'login') fillLogin();
+  if (p === 'chats') { chInit(); listChats(!!CHATS.length); }
+  if (p === 'gl') { glInit(); glLoad(); gqLoad(); skInit(); }
+  if (p === 'voice') vcLoad();
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => go(b.dataset.p));
+async function glBadgeRefresh() { try { if (ST.workspace && !LOCKED) { const j = await api('/api/glossary'); GL.counts = j.counts; GL.questions = j.questions; glBadge(); } } catch (e) {} }
+function markSteps() {
+  const s = ST.steps || {};
+  const map = {ws: s.workspace, llm: s.llm, tg: s.telegram, login: s.login, profile: s.profile, chats: s.chats};
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('done', !!map[b.dataset.p]));
+  $('modes').style.display = ST.workspace ? '' : 'none'; modsTabs(); themeApply();
+  $('hdr-ws').textContent = ST.workspace ? 'Папка: ' + ST.workspace + (ST.me ? '  ·  Telegram: ' + (ST.me.name || '') : '') : 'Папка не выбрана';
+}
+function firstStep() {
+  const s = ST.steps || {};
+  if (!s.workspace) return 'ws'; if (LOCKED === 'telegram') return s.telegram ? 'login' : 'tg';
+  if (!s.llm) return 'llm'; if (!s.telegram) return 'tg'; if (!s.login && !(ST.base && ST.base.messages)) return 'login';
+  return uiMods().digest ? 'digest' : 'ws';
+}
+let LAST_SET = '';
+async function refresh() {
+  ST = await api('/api/state'); markSteps();
+  const v = ST.vault || {}; PIN_LEN = v.pin_len || PIN_LEN;
+  $('lock-btn').style.display = v.enabled ? '' : 'none';
+  if (ST.workspace && v.status === 'none') { LOCKED = 'setup'; lockShow('setup'); return; }
+  if (ST.locked === 'full' || ST.locked === 'pin') { lockState(ST.locked); return; }
+  lockState(ST.locked || null);
+  if (ST.workspace) { CFG = await api('/api/config'); fillForms(); attachBg(); }
+  tasksBadge((ST.tasks || {}).active || 0);
+}
+
+// ---------------------------------------------------------------- 1. папка
+let FS = {path: '', cloud: false};
+function pickFolder() {
+  $('fs-modal').classList.add('on');
+  const v = $('ws-path').value || ''; const parent = v.replace(/[\\/][^\\/]*[\\/]?$/, '');
+  fsLoad(v).then(() => { if (!FS.path && parent) fsLoad(parent); });
+}
+function fsClose() { $('fs-modal').classList.remove('on'); }
+async function fsLoad(path) {
+  try { const j = await api('/api/fs/list?path=' + encodeURIComponent(path || ''));
+    FS = j; msg('fs-msg', '');
+    $('fs-places').innerHTML = j.places.map((p, i) => `<button data-i="${i}">${esc(p.name)}</button>`).join('');
+    $('fs-places').querySelectorAll('button').forEach(b => b.onclick = () => fsLoad(j.places[b.dataset.i].path));
+    $('fs-cur').value = j.path;
+    $('fs-list').innerHTML = j.path ? (j.entries.length ? j.entries.map((e, i) => `<div data-i="${i}">📁 ${esc(e.name)}</div>`).join('')
+        : '<div class="empty">Вложенных папок нет — можно выбрать эту или создать новую ниже.</div>')
+      : '<div class="empty">Выберите место вверху: домашняя папка, документы, диски…</div>';
+    $('fs-list').querySelectorAll('div[data-i]').forEach(d => d.onclick = () => fsLoad(j.entries[d.dataset.i].path));
+    $('fs-sel').textContent = j.path ? 'Будет выбрано: ' + j.path : '';
+    if (j.cloud) msg('fs-msg', 'Эта папка в OneDrive/облаке — для данных лучше выбрать папку вне облака.', 'warn');
+  } catch (e) {
+    if (path) { await fsLoad(''); msg('fs-msg', e.message + '. Выберите место вверху.', 'warn'); }
+    else msg('fs-msg', e.message, 'bad');
+  }
+}
+function fsUp() { if (FS.parent !== undefined) fsLoad(FS.parent); }
+async function fsMkdir() {
+  const name = $('fs-new').value.trim(); if (!name) return msg('fs-msg', 'Введите имя новой папки.', 'warn');
+  if (!FS.path) return msg('fs-msg', 'Сначала откройте место, где создать папку.', 'warn');
+  try { const j = await api('/api/fs/mkdir', {path: FS.path, name}); $('fs-new').value = ''; await fsLoad(j.path); msg('fs-msg', 'Папка создана.', 'ok'); }
+  catch (e) { msg('fs-msg', e.message, 'bad'); }
+}
+function fsChoose() {
+  if (!FS.path) return msg('fs-msg', 'Откройте папку, которую хотите выбрать.', 'warn');
+  $('ws-path').value = FS.path; fsClose(); wsCloud(FS.cloud);
+}
+function wsCloud(c) { if (c) msg('ws-msg', 'Похоже, это папка OneDrive/облака. Лучше выбрать папку вне облака — синхронизация мешает базе, а в папке будет доступ к Telegram.', 'warn'); else msg('ws-msg', ''); }
+async function setWs() {
+  try { ST = await api('/api/workspace/set', {path: $('ws-path').value}); await refresh();
+    msg('ws-msg', 'Готово: ' + ST.workspace, 'ok'); setTimeout(() => go(firstStep()), 600);
+  } catch (e) { msg('ws-msg', e.message, 'bad'); }
+}
+
+// ---------------------------------------------------------------- 2. модель
+function pickLlm(k) {
+  LLMK = k;
+  document.querySelectorAll('#llm-cards .choice').forEach(c => c.classList.toggle('on', c.dataset.k === k));
+  document.querySelectorAll('#p-llm .sub').forEach(c => c.classList.toggle('on', c.dataset.k === k));
+}
+document.querySelectorAll('#llm-cards .choice').forEach(c => c.onclick = () => pickLlm(c.dataset.k));
+function mvStyle() { const st = $('m-style').value;
+  $('m-custom').style.display = st === 'custom' ? '' : 'none';
+  $('m-model-box').style.display = st === 'agent' ? 'none' : '';
+  $('m-agent-hint').style.display = st === 'agent' ? '' : 'none';
+  $('m-url-l').textContent = {agent: 'Адрес Maverick (адрес сайта, без /api/…)', openai: 'Адрес (до /v1)', custom: 'Адрес (полный URL метода)'}[st];
+  $('m-token-l').textContent = st === 'agent' ? 'API-ключ (sk_…)' : 'Токен';
+  $('m-url').placeholder = st === 'agent' ? 'https://maverick.company.ru' : 'https://…/v1'; }
+async function findModels() {
+  try { const j = await api('/api/llm/models', {base_url: $('l-url').value});
+    const sel = $('l-model'), cur = sel.value;
+    sel.innerHTML = '<option value="auto">автоматически (загруженная)</option>' + j.models.map(m => `<option>${esc(m)}</option>`).join('');
+    if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+    msg('llm-msg', 'Найдено моделей: ' + j.models.length, 'ok');
+  } catch (e) { msg('llm-msg', e.message, 'bad'); }
+}
+async function saveLlm() {
+  const body = {provider: LLMK};
+  if (LLMK === 'local') body.local = {base_url: $('l-url').value, model: $('l-model').value, ctx: $('l-ctx').value};
+  if (LLMK === 'claude') body.claude = {api_key: $('c-key').value, model: $('c-model').value};
+  if (LLMK === 'maverick') body.maverick = {style: $('m-style').value, url: $('m-url').value, token: $('m-token').value,
+    model: $('m-model').value, body: $('m-body').value, response_path: $('m-path').value};
+  if (LLMK === 'claude_code') body.claude_code = {command: $('cc-cmd').value};
+  busy('llm-btn', true, 'Проверяю…'); msg('llm-msg', '');
+  try { await api('/api/config/llm', body); const j = await api('/api/llm/test', {});
+    msg('llm-msg', `✓ Модель ответила «${j.answer}» за ${j.seconds} с (${j.label})`, 'ok'); await refresh();
+  } catch (e) { msg('llm-msg', '✗ ' + e.message, 'bad'); await refresh(); }
+  busy('llm-btn', false);
+}
+
+// ---------------------------------------------------------------- 3. Telegram
+async function saveTg(quiet) {
+  try { const j = await api('/api/config/telegram', {api_id: $('t-id').value, api_hash: $('t-hash').value, phone: $('t-phone').value,
+      proxies: $('t-proxies').value, try_direct: $('t-direct').checked, web_egress: $('t-egress').value || 'auto'});
+    let t = 'Сохранено.' + (j.proxies.length ? ' Прокси: ' + j.proxies.join(', ') : ' Прокси не указаны.');
+    if (j.bad.length) t += '\nНе понял: ' + j.bad.join('; ');
+    if (!quiet) msg('tg-msg', t, j.bad.length ? 'warn' : 'ok'); await refresh(); return true;
+  } catch (e) { msg('tg-msg', e.message, 'bad'); return false; }
+}
+async function checkProxies() {
+  if (!await saveTg(true)) return;
+  busy('px-btn', true, 'Проверяю…'); msg('tg-msg', 'Проверяю каждый вариант — до 30 секунд на прокси; если не получится, покажу, на каком шаге…', 'info');
+  try { const {job} = await api('/api/telegram/proxies', {});
+    await poll(job, 'tg-log', j => {
+      if (j.status === 'error') msg('tg-msg', j.error, 'bad');
+      else msg('tg-msg', j.result.any_ok ? '✓ Связь с Telegram есть. Можно переходить ко входу.' : '✗ Ни один вариант не подключился — проверьте ссылки на прокси.', j.result.any_ok ? 'ok' : 'bad');
+    });
+  } catch (e) { msg('tg-msg', e.message, 'bad'); }
+  busy('px-btn', false);
+}
+
+// ---------------------------------------------------------------- 3а. экспорт Telegram Desktop
+async function runImport() {
+  busy('imp-btn', true, 'Загружаю…'); msg('imp-msg', 'Читаю экспорт — большой файл может загружаться несколько минут…', 'info');
+  try { const {job} = await api('/api/import', {path: $('t-imp-path').value});
+    await poll(job, 'imp-log', j => {
+      if (j.status === 'error') { msg('imp-msg', j.error, 'bad'); return; }
+      const r = j.result;
+      msg('imp-msg', `✓ Загружено: чатов ${r.chats}, сообщений ${r.messages} (новых ${r.new}). Сводку можно собирать без входа в Telegram.`, 'ok');
+    });
+  } catch (e) { msg('imp-msg', e.message, 'bad'); }
+  busy('imp-btn', false); refresh();
+}
+function baseLine() {
+  const b = ST.base; if (!b || !b.messages) return '';
+  return `В базе: ${b.messages} сообщений из ${b.chats} чатов` + (b.from ? ` (${b.from.slice(0, 10)} — ${b.to.slice(0, 10)})` : '') + '.';
+}
+
+// ---------------------------------------------------------------- 3б. VPN по подписке
+async function loadVpn(sel) {
+  try {
+    const v = await api('/api/vpn'); const x = v.xray || {};
+    $('xray-zipname').textContent = v.asset || 'Xray-windows-64.zip'; if (v.releases) $('xray-rel').href = v.releases;
+    if (x.installed) { msg('xray-msg', '✓ Ядро Xray ' + x.version + ' установлено.', 'ok'); $('xray-btn').textContent = 'Обновить Xray'; }
+    else msg('xray-msg', (x.problem ? '✗ ' + x.problem + '\n' : 'Ядро Xray ещё не установлено. ') + 'Нажмите «Установить Xray» — программа скачает его с GitHub (около 20 МБ) и проверит, что его не блокирует антивирус.', x.problem ? 'bad' : 'warn');
+    renderVpnRows(v.rows || [], sel || 'auto');
+  } catch (e) { msg('xray-msg', e.message, 'bad'); }
+}
+async function installXray(fromZip) {
+  const btn = fromZip ? 'xray-zip-btn' : 'xray-btn';
+  busy(btn, true, 'Устанавливаю…'); msg('xray-msg', fromZip ? 'Устанавливаю из файла…' : 'Скачиваю Xray с GitHub…', 'info');
+  try { const {job} = await api('/api/vpn/install', {zip: fromZip ? $('t-xray-zip').value : ''});
+    await poll(job, 'vpn-log', j => { if (j.status === 'error') msg('xray-msg', j.error, 'bad'); });
+  } catch (e) { msg('xray-msg', e.message, 'bad'); }
+  busy(btn, false); const v = (CFG.telegram || {}).vpn || {}; if (!$('xray-msg').classList.contains('bad')) loadVpn(v.selected);
+}
+function vpnBody() {
+  const r = document.querySelector('input[name=vpnsel]:checked');
+  return {source: $('t-vpn-src').value, enabled: $('t-vpn-on').checked, selected: r ? r.value : 'auto'};
+}
+async function saveVpn(quiet) {
+  try { await api('/api/vpn/save', vpnBody()); if (!quiet) msg('vpn-msg', 'Сохранено.', 'ok'); CFG = await api('/api/config'); }
+  catch (e) { msg('vpn-msg', e.message, 'bad'); }
+}
+async function testVpn() {
+  busy('vpn-btn', true, 'Проверяю…');
+  msg('vpn-msg', 'Загружаю подписку и проверяю каждый сервер: отвечает ли через него Telegram (до 30 секунд)…', 'info');
+  try { const {job} = await api('/api/vpn/test', vpnBody());
+    await poll(job, 'vpn-log', j => {
+      if (j.status === 'error') { msg('vpn-msg', j.error, 'bad'); return; }
+      const r = j.result;
+      msg('vpn-msg', r.ok ? `✓ Telegram отвечает через ${r.ok} из ${r.servers} серверов. Отметьте «Подключаться к Telegram через VPN» и нажмите «Сохранить».`
+                          : `✗ Ни через один из ${r.servers} серверов Telegram не ответил — причины в таблице.`, r.ok ? 'ok' : 'bad');
+      renderVpnRows(r.rows || [], vpnBody().selected);
+    });
+  } catch (e) { msg('vpn-msg', e.message, 'bad'); }
+  busy('vpn-btn', false);
+}
+function renderVpnRows(rows, sel) {
+  $('vpn-wrap').style.display = rows.length ? '' : 'none';
+  const radio = (val) => `<input type="radio" name="vpnsel" value="${esc(val)}" ${sel === val ? 'checked' : ''} onchange="saveVpn(true)">`;
+  $('vpn-body').innerHTML = `<tr><td>${radio('auto')}</td><td colspan="3"><b>Автовыбор</b> — самый быстрый из отвечающих; при обрыве — следующий</td></tr>`
+    + rows.map(r => `<tr><td>${radio(r.key)}</td><td>${esc(r.name)}</td><td>${r.ping_ms != null ? r.ping_ms + ' мс' : '—'}</td>`
+      + `<td>${r.tg_ok ? '✓ ' + r.tg_ms + ' мс' : '✗ ' + esc(r.error || 'нет ответа')}</td></tr>`).join('');
+}
+
+// ---------------------------------------------------------------- 4. вход
+function fillLogin() {
+  $('l-phone').value = $('l-phone').value || (CFG.telegram || {}).phone || '';
+  const d = $('login-done');
+  if (ST.me) { d.className = 'msg ok'; d.textContent = '✓ Вход выполнен: ' + (ST.me.name || '') + (ST.me.username ? ' (@' + ST.me.username + ')' : '') + '. Повторно входить не нужно.'; }
+  else d.className = 'msg';
+}
+async function sendCode() {
+  busy('code-btn', true, 'Подключаюсь…'); msg('login-msg', 'Подключаюсь к Telegram через прокси и запрашиваю код…', 'info');
+  try { const j = await api('/api/telegram/send_code', {phone: $('l-phone').value});
+    if (j.status === 'authorized') { msg('login-msg', '✓ Вы уже вошли.', 'ok'); await refresh(); fillLogin(); }
+    else { $('code-box').style.display = ''; $('l-code').focus(); msg('login-msg', 'Код отправлен в приложение Telegram' + (j.via ? ' (связь: ' + j.via + ')' : '') + '.', 'info'); }
+  } catch (e) { msg('login-msg', e.message, 'bad'); }
+  busy('code-btn', false);
+}
+async function signIn(withPwd) {
+  try { const j = await api('/api/telegram/sign_in', withPwd ? {password: $('l-pwd').value} : {code: $('l-code').value});
+    if (j.status === 'password_needed') { $('pwd-box').style.display = ''; $('l-pwd').focus(); msg('login-msg', 'Включена двухэтапная проверка — введите облачный пароль Telegram.', 'info'); return; }
+    msg('login-msg', '✓ Готово: вы вошли как ' + (j.me.name || '') + '.', 'ok'); $('code-box').style.display = 'none'; $('pwd-box').style.display = 'none';
+    await refresh(); fillLogin(); setTimeout(() => go('profile'), 900);
+  } catch (e) { msg('login-msg', e.message, 'bad'); }
+}
+
+// ---------------------------------------------------------------- 5. профиль
+function compRow(c) {
+  const d = document.createElement('div'); d.className = 'comp';
+  d.innerHTML = `<input type="text" placeholder="Компетенция" value="${esc(c.name)}"><input type="text" placeholder="Что входит" value="${esc(c.description)}">` +
+    `<input type="text" placeholder="Ключевые слова через запятую" value="${esc((c.keywords || []).join ? c.keywords.join(', ') : c.keywords)}"><button class="x" title="Убрать">×</button>`;
+  d.querySelector('.x').onclick = () => d.remove(); $('comps').appendChild(d);
+}
+function addComp() { compRow({name: '', description: '', keywords: []}); }
+async function saveProfile() {
+  const comps = [...document.querySelectorAll('#comps .comp')].map(d => { const i = d.querySelectorAll('input'); return {name: i[0].value, description: i[1].value, keywords: i[2].value}; });
+  try { await api('/api/config/profile', {name: $('pr-name').value, role: $('pr-role').value, aliases: $('pr-aliases').value,
+      responsibilities: $('pr-resp').value, ignore_topics: $('pr-ignore').value, competences: comps});
+    msg('pr-msg', 'Сохранено.', 'ok'); await refresh();
+  } catch (e) { msg('pr-msg', e.message, 'bad'); }
+}
+
+// ---------------------------------------------------------------- 6. чаты — ui/chats.js
+const BG = {};   // фоновые задачи: kind -> id
+let CMWHEN = 'all', IMG_CHAT = null;
+function renderMediaStats(st) {
+  st = st || {}; const b = ST.base || {};
+  $('ex-stats').textContent = (b.messages ? `В базе: ${b.messages} сообщений из ${b.chats} чатов. ` : '') +
+    (st.images ? `Изображений: ${st.images} (скачано ${st.images_ok}, описано ${st.described}). ` : '') +
+    (st.refs ? `Тяжёлых файлов-ссылок: ${st.refs}. ` : '') + (st.last_export ? `Последняя выгрузка: ${new Date(st.last_export).toLocaleString()}.` : '');
+}
+document.querySelectorAll('#cm-when button').forEach(b => b.onclick = () => {
+  CMWHEN = b.dataset.v; document.querySelectorAll('#cm-when button').forEach(x => x.classList.toggle('on', x === b));
+  $('cm-since').style.display = CMWHEN === 'since' ? '' : 'none';
+});
+async function chatImages() {
+  const c = CH.cur; if (!c) return;
+  const body = {chat_id: c.id};
+  if (CMWHEN === 'since') { if (!$('cm-since').value) return alert('Выберите дату'); body.since = $('cm-since').value; }
+  try { const {job} = await api('/api/chat/images', body); IMG_CHAT = c.id; runBg('images', job); }
+  catch (e) { alert(e.message); }
+}
+async function exportChat() {
+  const c = CH.cur; if (!c) return;
+  try { const {job} = await api('/api/export', {chat_ids: [c.id], media: true}); runBg('export', job, 'cm-log'); }
+  catch (e) { alert(e.message); }
+}
+// --- выгрузка всей истории
+async function runExport() {
+  const body = {media: $('ex-media').checked, since: $('ex-since').value || null};
+  if ($('ex-light').value) body.light_max_mb = $('ex-light').value;
+  if (!body.since && !confirm('Выгрузить всю историю всех чатов (кроме исключённых)? Это может занять несколько часов; программу можно не закрывать, а выгрузку — остановить и продолжить позже.')) return;
+  try { const {job} = await api('/api/export', body); runBg('export', job); } catch (e) { alert(e.message); }
+}
+const BG_UI = {export: ['ex-btn', 'ex-stop', 'ex-log', 'Выгружаю…'], images: ['cm-img-btn', 'cm-img-stop', 'cm-log', 'Читаю…'],
+  describe: ['ch-ai-btn', 'ch-ai-stop', 'ch-ai-log', 'Описываю…'], glossary: ['gl-scan-btn', 'gl-scan-stop', 'gl-log', 'Читаю чаты…']};
+async function runBg(kind, id, logEl) {
+  if (BG[kind] === id) return;
+  BG[kind] = id; const [btn, stop, lg, label] = BG_UI[kind];
+  busy(btn, true, label); $(stop).style.display = '';
+  if (kind === 'export') busy('cm-exp-btn', true, 'Выгружаю…');
+  await poll(id, logEl || lg, async j => {
+    busy(btn, false); $(stop).style.display = 'none'; if (kind === 'export') busy('cm-exp-btn', false);
+    delete BG[kind];
+    if (j.status === 'lost') {  // refresh → attachBg подхватит продолжение (программа запускает его в течение ~5 с)
+      await refresh().catch(() => {}); setTimeout(() => refresh().catch(() => {}), 7000); return;
+    }
+    $(logEl || lg).textContent += j.status === 'error' ? '✗ ' + j.error + '\n' : (j.cancelled ? 'Остановлено (можно продолжить в «Задачах»).\n' : '✓ Готово.\n');
+    await refresh(); await listChats(true);
+    if (CH.cur && $('chat-modal').classList.contains('on')) chOpen(CH.cur.id, CH.tab);
+    if (kind === 'describe' && $('person-modal').classList.contains('on') && CH.person) personOpen(CH.person.id, CH.person.chat);
+    if (kind === 'describe' && CH.view === 'people') chPeople();
+    if (kind === 'glossary') glLoad();
+  }).catch(e => { busy(btn, false); delete BG[kind]; });
+}
+async function stopJob(kind) { if (BG[kind]) try { await api('/api/jobs/' + BG[kind] + '/cancel', {}); } catch (e) {} }
+function attachBg() { (ST.background || []).forEach(j => { if (BG_UI[j.kind] && !BG[j.kind]) runBg(j.kind, j.id); }); }
+
+// ---------------------------------------------------------------- изображения: модель
+const PROF_RU = {local: 'Локальная (LM Studio / Ollama)', maverick: 'Maverick', claude: 'Claude API', claude_code: 'Claude Code'};
+function fillMedia() {
+  const m = CFG.media || {}; const sel = $('v-prov');
+  sel.innerHTML = '<option value="">та же, что для сводок</option>' + (m.profiles || []).map(p => `<option value="${esc(p)}">${esc(PROF_RU[p] || p)}</option>`).join('');
+  sel.value = m.vision_provider || ''; $('v-auto').value = m.auto_describe_max ?? 8; $('v-workers').value = m.describe_workers || 2;
+  $('v-mav-body').value = m.maverick_image_body || ''; mavBox(); sel.onchange = mavBox;
+}
+function mavBox() { const m = CFG.media || {}, v = $('v-prov').value || (CFG.llm || {}).provider;
+  $('v-mav').style.display = m.maverick && v === 'maverick' ? '' : 'none'; }
+async function testVision() {
+  busy('v-btn', true, 'Проверяю…'); msg('v-msg', '');
+  try {
+    const mb = {auto_describe_max: $('v-auto').value, describe_workers: $('v-workers').value};
+    if ($('v-mav').style.display !== 'none') mb.maverick_image_body = $('v-mav-body').value;
+    await api('/api/config/media', mb);
+    const {job} = await api('/api/vision/test', {provider: $('v-prov').value});
+    await poll(job, 'v-log', j => {
+      if (j.status === 'error') return msg('v-msg', '✗ ' + j.error, 'bad');
+      const r = j.result; msg('v-msg', r.ok ? `✓ Модель видит изображения (${r.label}, ${r.seconds} с).` : `✗ Модель ответила «${r.answer}», а на картинке ${r.expected}: изображение до неё не доходит. Выберите другую модель для изображений.`, r.ok ? 'ok' : 'bad');
+    }); CFG = await api('/api/config'); fillMedia();
+  } catch (e) { msg('v-msg', '✗ ' + e.message, 'bad'); }
+  busy('v-btn', false);
+}
+
+// ---------------------------------------------------------------- сводка — в digest.js
+function openReport(name) { window.open('/reports/' + encodeURIComponent(name) + '?t=' + encodeURIComponent(T), '_blank'); }
+async function loadReports() {
+  try { const {reports} = await api('/api/reports');
+    $('reports').innerHTML = reports.length ? reports.map(r => `<div class="rep"><div class="when">${esc(r.mtime)}<br><span class="pill">${esc(r.period_label || {day: 'сутки', week: 'неделя', month: 'месяц', custom: 'период', hours: 'часы', demo: 'пример'}[r.period] || r.period)}</span></div>` +
+      `<div class="what">${esc(r.headline || r.name)}</div><div class="fit"><button class="b" onclick="openReport('${esc(r.name)}')">Открыть</button>` +
+      (r.md ? ` <button class="b" onclick="openReport('${esc(r.name.replace(/\.html$/, '.md'))}')" title="Markdown для Confluence/почты">MD</button>` : '') +
+      ` <button class="b" onclick="exportReport('${esc(r.name)}')" title="Расшифровать этот отчёт в «Загрузки/OpsDigest» — чтобы переслать или распечатать">Экспорт</button>` +
+      fbButtons('report', r.headline || '', {report: r.name, title: (r.headline || r.name).slice(0, 80)}) + `</div></div>`).join('') : '<div class="hint">Пока нет.</div>';
+  } catch (e) { /* папка не выбрана */ }
+}
+async function exportReport(name) {
+  try { const j = await api('/api/reports/export', {name}); alert('Отчёт сохранён открытым файлом:\n' + j.html + (j.md ? '\n' + j.md : '')); }
+  catch (e) { alert(e.message); }
+}
+// ---------------------------------------------------------------- страница «Защита»
+function fillSec() {
+  const v = ST.vault || {}, p = CFG.privacy || {};
+  $('sec-min').value = v.lock_minutes || 10; $('sec-tg').checked = v.require_telegram !== false; $('sec-pin').value = '';
+  $('pv-on').checked = p.pseudonymize !== false; $('pv-soft').checked = p.soften !== false;
+  $('pv-people').value = p.people || ''; $('pv-keep').value = p.keep || '';
+}
+async function saveSec() {
+  const body = {lock_minutes: $('sec-min').value, require_telegram: $('sec-tg').checked, new_pin: $('sec-pin').value};
+  if (!body.require_telegram && (ST.vault || {}).require_telegram && !(ST.vault || {}).telegram_ok) {
+    const code = prompt('Вход в Telegram не выполнен. Чтобы снять условие, введите код восстановления:');
+    if (!code) return; body.code = code;
+  }
+  try { await api('/api/vault/settings', body);
+    msg('sec-msg', 'Сохранено.', 'ok'); $('sec-pin').value = ''; await refresh(); }
+  catch (e) { msg('sec-msg', e.message, 'bad'); }
+}
+async function changePw() {
+  try { await api('/api/vault/settings', {password: $('sec-old').value, new_password: $('sec-new').value}); msg('pw-msg', 'Пароль изменён.', 'ok'); $('sec-old').value = $('sec-new').value = ''; }
+  catch (e) { msg('pw-msg', e.message, 'bad'); }
+}
+async function savePrivacy() {
+  try { const j = await api('/api/config/privacy', {pseudonymize: $('pv-on').checked, soften: $('pv-soft').checked, people: $('pv-people').value, keep: $('pv-keep').value});
+    CFG.privacy = j.privacy; msg('pv-msg', 'Сохранено.', 'ok'); }
+  catch (e) { msg('pv-msg', e.message, 'bad'); }
+}
+async function showSent() {
+  try { const {items} = await api('/api/privacy/recent');
+    $('pv-sent').innerHTML = items.length ? items.slice().reverse().map(x => `<div class="hint">${esc(x.at)} · людей в карте: ${x.map}</div><pre class="sent">${esc(x.system)}\n\n${esc(x.user)}</pre>`).join('')
+      : '<div class="hint">С момента запуска программы запросов во внешнюю модель не было.</div>';
+  } catch (e) { msg('pv-msg', e.message, 'bad'); }
+}
+async function ask() {
+  const q = $('ask-q').value.trim(); if (!q) return;
+  busy('ask-btn', true, 'Думаю…'); $('ask-answer').textContent = '';
+  $('ask-extra').innerHTML = '';
+  try { const {job} = await api('/api/ask', {question: q, sync: $('dg-sync').checked && !$('dg-sync').disabled});
+    await poll(job, 'ask-log', j => { $('ask-log').classList.remove('on');
+      if (j.status === 'error') { $('ask-answer').textContent = '✗ ' + j.error; return; }
+      const r = j.result; $('ask-answer').textContent = r.answer; renderAskExtra(r); });
+  } catch (e) { $('ask-answer').textContent = '✗ ' + e.message; }
+  busy('ask-btn', false);
+}
+const mediaUrl = id => '/media-file/' + id + '?t=' + encodeURIComponent(T);
+function renderAskExtra(r) {
+  let h = '';
+  if ((r.images || []).length) h += '<div class="thumbs">' + r.images.map(x => `<figure><a href="${mediaUrl(x.id)}" target="_blank"><img loading="lazy" src="${mediaUrl(x.id)}" alt=""></a>` +
+    `<figcaption>${esc(x.chat)} · #${x.msg_id} · ${esc(x.date)}<br>${esc(x.summary || 'не описано')}</figcaption></figure>`).join('') + '</div>';
+  if ((r.need_files || []).length) h += '<div class="need"><b>Модели нужны файлы, которых нет в папке:</b>' + r.need_files.map(f =>
+    `<div class="row" style="margin-top:6px"><span>${esc(f.name)} · ${esc(f.size)} · ${esc(f.chat)}</span><button class="b fit" onclick="fetchFile(${f.id}, this)">Скачать</button></div>`).join('') +
+    '<div class="hint">После скачивания задайте вопрос ещё раз — файл будет учтён (изображение — сразу описано).</div></div>';
+  if (r.described) h += `<div class="hint">Прочитано изображений для этого ответа: ${r.described}.</div>`;
+  $('ask-extra').innerHTML = h;
+}
+async function fetchFile(id, btn) {
+  busy(btn, true, 'Скачиваю…');
+  try { const {job} = await api('/api/media/fetch', {id});
+    await poll(job, null, j => { btn.innerHTML = j.status === 'error' ? '✗ ' + esc(j.error) : '✓ Скачано'; btn.disabled = true; });
+  } catch (e) { btn.disabled = false; btn.innerHTML = '✗ ' + esc(e.message); }
+}
+const DI = {ok: ['✓', 'var(--ok)'], warn: ['!', 'var(--warn)'], fail: ['✗', 'var(--bad)'], info: ['·', 'var(--muted)']};
+async function runDiag() {
+  busy('diag-btn', true, 'Проверяю — до минуты…');
+  try { const {job} = await api('/api/diag', {});
+    await poll(job, null, j => { if (j.status === 'error') return alert(j.error); renderDiag(j.result.checks); });
+  } catch (e) { alert(e.message); }
+  busy('diag-btn', false);
+}
+function renderDiag(rows) {
+  $('diag-wrap').style.display = ''; let g = null;
+  $('diag-body').innerHTML = rows.map(r => { let h = '';
+    if (r.group !== g) { g = r.group; h += `<tr><th colspan="3">${esc(g)}</th></tr>`; }
+    const [ic, col] = DI[r.status] || DI.info;
+    return h + `<tr><td style="width:26px;color:${col};font-weight:700;text-align:center">${ic}</td><td>${esc(r.title)}</td><td style="color:var(--muted)">${esc(r.detail)}</td></tr>`;
+  }).join('');
+}
+async function makeReport() {
+  busy('rep-btn', true, 'Собираю отчёт…');
+  try { const {job} = await api('/api/report', {});
+    await poll(job, null, j => { if (j.status === 'error') return alert(j.error);
+      $('rep-card').style.display = ''; $('rep-text').value = j.result.text;
+      $('rep-path').textContent = 'Файл: ' + j.result.path + ' — его можно переслать, например себе в Telegram. Проверьте текст ниже перед отправкой.'; });
+  } catch (e) { alert(e.message); }
+  busy('rep-btn', false);
+}
+function copyReport() { const t = $('rep-text'); t.select(); try { document.execCommand('copy'); } catch (e) {} }
+async function openFolder(what) { try { await api('/api/open_folder', {what}); } catch (e) { alert(e.message); } }
+async function quit() {
+  const n = (ST.tasks || {}).active || 0;
+  if (!confirm(n ? `Закрыть OpsDigest? Идут задачи (${n}) — они продолжатся при следующем запуске.\n\nЗакрытое окно (×) программу не останавливает: она работает в фоне. «Выход» — остановить совсем.`
+                 : 'Закрыть OpsDigest совсем?\n\nЕсли нужно просто убрать окно — закройте его (×): программа продолжит работать в фоне.')) return; try { await api('/api/shutdown', {}); } catch (e) {} document.body.innerHTML = '<p style="padding:40px;font:16px sans-serif">OpsDigest закрыт. Это окно можно закрыть.</p>'; }
+
+// ---------------------------------------------------------------- заполнение форм
+function fillForms() {
+  const l = CFG.llm || {};
+  pickLlm(l.provider || 'local');
+  $('l-url').value = l.local.base_url; $('l-ctx').value = l.local.ctx;
+  if (l.local.model && l.local.model !== 'auto') { const s = $('l-model'); if (![...s.options].some(o => o.value === l.local.model)) s.add(new Option(l.local.model, l.local.model)); s.value = l.local.model; }
+  $('c-model').value = l.claude.model; $('c-key').placeholder = l.claude.api_key_set ? '•••••• сохранён (оставьте пустым)' : 'sk-ant-…';
+  $('m-style').value = l.maverick.style; $('m-url').value = l.maverick.url; $('m-model').value = l.maverick.model;
+  $('m-token').placeholder = l.maverick.token_set ? '•••••• сохранён' : ''; $('m-body').value = l.maverick.body; $('m-path').value = l.maverick.response_path; mvStyle();
+  $('cc-cmd').value = l.claude_code.command;
+  const t = CFG.telegram || {};
+  $('t-id').value = t.api_id; $('t-phone').value = t.phone; $('t-proxies').value = (t.proxies || []).join('\n'); $('t-direct').checked = t.try_direct; $('t-egress').value = t.web_egress || 'auto';
+  const v = t.vpn || {}; $('t-vpn-src').value = v.source || ''; $('t-vpn-on').checked = !!v.enabled; loadVpn(v.selected || 'auto');
+  $('t-hash').placeholder = t.api_hash_set ? '•••••• сохранён (оставьте пустым)' : '32 символа';
+  const p = CFG.profile || {};
+  $('pr-name').value = p.name || ''; $('pr-role').value = p.role || ''; $('pr-aliases').value = (p.aliases || []).join(', ');
+  $('pr-resp').value = p.responsibilities || ''; $('pr-ignore').value = (p.ignore_topics || []).join(', ');
+  $('comps').innerHTML = ''; (p.competences && p.competences.length ? p.competences : [{name: '', description: '', keywords: []}]).forEach(compRow);
+  fillMedia(); if (CFG.media && !$('ex-light').value) $('ex-light').value = CFG.media.light_max_mb;
+}
+
+(async () => {
+  if (!T) { document.body.innerHTML = '<p style="padding:40px;font:16px sans-serif">Откройте программу через OpsDigest.bat.</p>'; return; }
+  rawPing().then(j => { if (j) LINK.boot = j.boot; });
+  try { await refresh(); } catch (e) { alert(e.message); return; }
+  if (LOCKED === 'full' || LOCKED === 'pin' || LOCKED === 'setup') {
+    setInterval(linkCheck, 20000);
+    $('ws-path').value = ST.workspace || ST.default_workspace;
+    return;
+  }
+  $('ws-path').value = ST.workspace || ST.default_workspace;
+  $('ws-suggest').innerHTML = 'Например: ' + esc(ST.default_workspace) + ' (не в OneDrive).';
+  if (ST.workspace_in_cloud) wsCloud(true);
+  go(firstStep());
+  mxAuto(); glBadgeRefresh();
+  if (OPEN_LINK && !LOCKED) setTimeout(() => mxOpenLink(OPEN_LINK), 800);
+  setInterval(linkCheck, 20000);
+})();
+</script>
+<script src="/static/rpa.js"></script>
+<script src="/static/design-system.js"></script>
+</body>
+</html>

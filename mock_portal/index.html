@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><title>MSFM — Service Desk (тестовый стенд)</title><script src="common.js"></script></head>
+<body style="margin:0;font:13px Arial,sans-serif;background:#dfe8f6">
+<script>
+window.__db = {
+  incidents: [
+    {num:'IM10021', status:'Зарегистрирован', prio:'Средний', group:'2ЛП Сеть', title:'Не работает VPN',
+     descr:'Пользователь Иванов И.И. сообщает, что VPN не подключается.\nОшибка 809. Перезагрузка не помогла.',
+     reg:'16.10.2026 09:12', sla:'16.10.2026 17:12', left:'05:24', ola:'2 ч 30 мин', problem:null, tasks:[], escalated:false, hold:null},
+    {num:'IM10022', status:'Зарегистрирован', prio:'Высокий', group:'2ЛП Серверы', title:'Недоступен файловый сервер',
+     descr:'Не открывается \\\\fs01\\share с 08:40. Затронут отдел продаж.',
+     reg:'16.10.2026 08:47', sla:'16.10.2026 12:47', left:'01:02', ola:'1 ч', problem:null, tasks:[], escalated:false, hold:null},
+    {num:'IM10023', status:'В работе', prio:'Низкий', group:'Выездная поддержка', title:'Замена картриджа',
+     descr:'Принтер HP 3 этаж, каб. 312.', reg:'15.10.2026 16:05', sla:'17.10.2026 16:05', left:'27:40', ola:'8 ч',
+     problem:null, tasks:[], escalated:false, hold:null},
+    {num:'IM10024', status:'Зарегистрирован', prio:'Средний', group:'2ЛП Сеть', title:'Медленный интернет в филиале',
+     descr:'Филиал Самара, скорость упала до 2 Мбит/с.', reg:'16.10.2026 10:30', sla:'16.10.2026 18:30', left:'06:41', ola:'4 ч',
+     problem:null, tasks:[], escalated:false, hold:null},
+  ],
+  problems: [
+    {num:'PM1001', title:'Сбой почтового сервера'},
+    {num:'PM1002', title:'Массовые проблемы VPN'},
+    {num:'PM1003', title:'Отказ принтеров 3 этажа'},
+  ],
+  tasks: [], log: []
+};
+
+function build() {
+  const hdr = h('div', 'height:34px;background:#15428b;color:#fff;font:bold 15px Arial;padding:8px 12px;box-sizing:border-box', 'MSFM Service Desk');
+  const left = h('div', 'position:absolute;left:0;top:34px;bottom:0;width:180px;background:#f0f4fb;border-right:1px solid #99bbe8');
+  const mi = (t, fn) => h('div', 'padding:7px 12px;cursor:pointer;border-bottom:1px solid #dde', t, {onclick: fn});
+  ap(left, mi('Очередь инцидентов', openWorkspace), mi('Проблемы', () => {}), mi('Отчёты', () => {}));
+  const main = h('div', 'position:absolute;left:181px;top:34px;right:0;bottom:0;background:#fff');
+  window.__main = main;
+  ap(document.body, hdr, left, main);
+}
+
+function openWorkspace() {
+  __main.innerHTML = '';
+  clearTimeout(window.__wsTimer);
+  window.__wsTimer = setTimeout(() => {
+    const f = h('iframe', 'border:0;width:100%;height:100%', null,
+      {name: 'ws' + Math.random().toString(36).slice(2, 8), src: 'workspace.html?_=' + Date.now()});
+    ap(__main, f);
+  }, 200 + Math.random() * 400);
+}
+
+// Диалог «Перевод в ожидание» рисуется в ВЕРХНЕМ документе, а вызывается из карточки (iframe 3-го уровня)
+window.showHoldDialog = function (num, done) {
+  const ov = h('div', 'position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.3);z-index:1000');
+  const dlg = h('div', 'position:absolute;left:50%;top:120px;margin-left:-240px;width:480px;background:#fff;border:1px solid #99bbe8;box-shadow:0 4px 16px #555');
+  ap(dlg, h('div', 'background:#15428b;color:#fff;padding:6px;font-weight:bold', 'Перевод в ожидание — ' + num));
+  const t = h('table', 'margin:10px;border-collapse:collapse'), tb = h('tbody'); ap(t, tb);
+  const reason = combo('', ['Ожидание ответа пользователя', 'Ожидание поставщика', 'Ожидание согласования'], null, {triggerOnly: true, width: 260});
+  const date = h('input', 'width:150px;padding:3px;border:1px solid #b5b8c8');
+  const comment = h('textarea', 'width:280px;height:50px;border:1px solid #b5b8c8');
+  const row = (l, f) => ap(tb, ap(h('tr'), h('td', 'padding:4px;color:#15428b;vertical-align:top', l), ap(h('td', 'padding:4px'), f)));
+  row('Причина ожидания:', reason); row('Дата возобновления:', date); row('Комментарий:', comment);
+  const err = h('div', 'color:#c00;margin:0 10px;min-height:16px');
+  const btns = h('div', 'text-align:right;padding:8px;border-top:1px solid #ddd');
+  ap(btns,
+    extBtn('ОК', () => {   // кириллические «ОК»
+      if (!reason.input.value) { err.textContent = 'Укажите причину ожидания'; return; }
+      ov.remove(); done(reason.input.value, date.value, comment.value);
+    }),
+    extBtn('Отмена', () => ov.remove()));
+  ap(dlg, t, err, btns); ap(ov, dlg); ap(document.body, ov);
+};
+
+build();
+openWorkspace();
+</script>
+</body>
+</html>

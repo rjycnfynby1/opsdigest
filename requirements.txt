@@ -1,0 +1,9 @@
+telethon>=1.36,<2
+python-socks[asyncio]>=2.4
+tzdata
+tomli
+playwright>=1.40
+pytesseract>=0.3.10
+pillow>=9.0
+# необязательно, только для desktop_click_ocr():
+# pyautogui>=0.9.54

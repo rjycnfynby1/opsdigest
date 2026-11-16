@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><script src="common.js"></script></head>
+<body style="margin:0;font:12px Arial,sans-serif;background:#fff">
+<script>
+const num = new URLSearchParams(location.search).get('num');
+const inc = () => db().incidents.find(i => i.num === num);
+
+function api(type) {   // фронт дёргает бэкенд — это видно в журнале сети
+  try { fetch('api/action', {method: 'POST', body: JSON.stringify({type, num})}).catch(() => {}); } catch (e) {}
+}
+function busy(fn) {    // имитация обращения к серверу: карточка перерисовывается целиком, все id новые
+  document.body.innerHTML = '';
+  ap(document.body, h('div', 'padding:20px;color:#888', 'Загрузка...'));
+  setTimeout(() => { fn && fn(); render(); }, 250 + Math.random() * 500);
+}
+function canvasBtn(text, onclick) {   // кнопка, нарисованная на canvas: текста в DOM нет вообще
+  const c = h('canvas', 'vertical-align:middle;margin:2px;cursor:pointer');
+  c.width = 120; c.height = 26;
+  const g = c.getContext('2d');
+  g.fillStyle = '#fde9d9'; g.fillRect(0, 0, 120, 26);
+  g.strokeStyle = '#e0a080'; g.strokeRect(0.5, 0.5, 119, 25);
+  g.fillStyle = '#000'; g.font = '13px Arial'; g.textBaseline = 'middle'; g.fillText(text, 12, 13);
+  c.addEventListener('click', onclick);
+  return c;
+}
+
+function render() {
+  const i = inc();
+  document.body.innerHTML = '';
+  const tb = h('div', 'padding:4px;background:#f0f4fb;border-bottom:1px solid #99bbe8');
+  if (i.status === 'Зарегистрирован')
+    ap(tb, extBtn('Принять в работу', () => busy(() => { i.status = 'В работе'; log('accept ' + num); api('accept'); })));
+  if (i.status === 'В работе')
+    ap(tb, extBtn('Перевести в ожидание', () => top.showHoldDialog(num, (reason, date, comment) =>
+      busy(() => { i.status = 'Ожидание'; i.hold = {reason, date, comment}; log('hold ' + num); api('hold'); }))));
+  if (i.status === 'Ожидание')
+    ap(tb, extBtn('Вывести из ожидания', () => busy(() => { i.status = 'В работе'; i.hold = null; log('resume ' + num); api('resume'); })));
+  ap(tb,
+    extBtn('Выписать задание', openTask),
+    extBtn('Связать с проблемой', openLink),
+    extBtn('Сохранить', save),
+    extBtn('Обновить карточку', () => busy(), {icon: '↻'}),
+    canvasBtn('Эскалировать', () => busy(() => { i.escalated = true; log('escalate ' + num); api('escalate'); })),
+    extBtn('Закрыть', () => parent.closeCard(num)));
+
+  const t = h('table', 'border-collapse:collapse;margin:8px'), b = h('tbody'); ap(t, b);
+  const L = (s) => h('td', 'padding:4px 6px;color:#15428b;white-space:nowrap;vertical-align:top', s);
+  const F = (el, span) => { const td = h('td', 'padding:4px 6px'); if (span) td.colSpan = span; ap(td, el); return td; };
+  const span = (s) => h('span', 'display:inline-block;min-width:150px;padding:3px', s);
+  const input = (v, ro, w) => { const e = h('input', `width:${w || 220}px;padding:3px;border:1px solid #b5b8c8;${ro ? 'background:#f3f3f3' : ''}`); e.value = v; if (ro) e.readOnly = true; return e; };
+  const tr = (...tds) => ap(b, ap(h('tr'), ...tds));
+
+  const prio = combo(i.prio, ['Низкий', 'Средний', 'Высокий', 'Критический']);
+  const group = input(i.group);
+  const title = input(i.title, false, 560);
+  const descr = h('textarea', 'width:640px;height:70px;border:1px solid #b5b8c8;font:12px Arial');
+  descr.value = i.descr;
+  window.__form = {prio, group, title, descr};
+
+  tr(L('Номер:'), F(span(i.num)), L('Статус:'), F(input(i.status, true)));
+  tr(L('Приоритет:'), F(prio), L('Назначено группе:'), F(group));
+  tr(L('Краткое описание:'), F(title, 3));
+  tr(ap(h('td', 'padding:8px 6px 2px', null, {colspan: '4'}), h('div', 'color:#15428b', 'Подробное описание:')));   // подпись НАД полем
+  tr(F(descr, 4));
+  tr(L('Дата регистрации:'), F(span(i.reg)), L('Срок решения (SLA):'), F(span(i.sla)));
+  tr(L('Осталось по SLA:'), F(span(i.left)), F(h('div', 'color:#15428b', 'OLA: ' + i.ola), 2));   // подпись и значение в одном элементе
+  tr(L('Связанная проблема:'), F(span(i.problem || '—')), L('Задания:'), F(span(i.tasks.length ? i.tasks.join(', ') : 'нет')));
+  if (i.hold) tr(L('Эскалация:'), F(span(i.escalated ? 'Да' : 'Нет')), L('Причина ожидания:'), F(span(i.hold.reason)));
+  else tr(L('Эскалация:'), F(span(i.escalated ? 'Да' : 'Нет')));
+  ap(document.body, tb, t);
+}
+
+function save() {
+  const i = inc(), f = window.__form;
+  const vals = {prio: f.prio.input.value, group: f.group.value, title: f.title.value, descr: f.descr.value};
+  busy(() => { Object.assign(i, vals); log('save ' + num); api('save'); });
+}
+
+function openLink() {   // модальное окно ВНУТРИ карточки
+  const ov = h('div', 'position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.25);z-index:100');
+  const dlg = h('div', 'position:absolute;left:120px;top:60px;width:480px;background:#fff;border:1px solid #99bbe8;box-shadow:0 4px 16px #888');
+  ap(dlg, h('div', 'background:#15428b;color:#fff;padding:6px;font-weight:bold', 'Поиск проблемы'));
+  const body = h('div', 'padding:10px');
+  const q = h('input', 'width:220px;padding:3px;border:1px solid #b5b8c8');
+  const res = h('div', 'margin-top:8px;min-height:60px;border:1px solid #ddd');
+  let sel = null;
+  function search() {
+    res.innerHTML = '';
+    setTimeout(() => {
+      const s = q.value.trim().toLowerCase();
+      db().problems.filter(p => !s || p.num.toLowerCase().includes(s) || p.title.toLowerCase().includes(s)).forEach(p => {
+        const r = h('div', 'display:flex;padding:4px;cursor:pointer;border-bottom:1px solid #eee');
+        r.addEventListener('click', () => { sel = p.num; [...res.children].forEach(x => x.style.background = ''); r.style.background = '#dfe8f6'; });
+        ap(r, h('div', 'width:90px', p.num), h('div', null, p.title));
+        ap(res, r);
+      });
+    }, 300);
+  }
+  ap(body, ap(h('div'), h('span', 'color:#15428b;margin-right:6px', 'Номер или описание:'), q, extBtn('Найти', search)), res);
+  const btns = h('div', 'text-align:right;padding:8px;border-top:1px solid #ddd');
+  ap(btns,
+    extBtn('Связать', () => { if (!sel) return; const s = sel; ov.remove(); busy(() => { inc().problem = s; log('link ' + num + ' ' + s); api('link'); }); }),
+    extBtn('Отмена', () => ov.remove()));
+  ap(dlg, body, btns); ap(ov, dlg); ap(document.body, ov);
+}
+
+function openTask() {   // форма задания открывается в iframe 4-го уровня
+  const ov = h('div', 'position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,.25);z-index:100');
+  const fr = h('iframe', 'position:absolute;left:80px;top:40px;width:560px;height:300px;border:1px solid #99bbe8;background:#fff', null,
+    {src: 'task.html?num=' + num + '&_=' + Date.now(), name: 't' + Math.random().toString(36).slice(2)});
+  ap(ov, fr); ap(document.body, ov);
+  window.closeTaskFrame = (created) => { ov.remove(); if (created) busy(); };
+}
+
+busy();   // первичная загрузка с задержкой
+</script>
+</body>
+</html>

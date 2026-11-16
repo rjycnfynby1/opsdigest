@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><script src="common.js"></script></head>
+<body style="margin:0;font:12px Arial,sans-serif;background:#fff">
+<script>
+const num = new URLSearchParams(location.search).get('num');
+setTimeout(() => {
+  ap(document.body, h('div', 'background:#15428b;color:#fff;padding:6px;font-weight:bold', 'Новое задание к ' + num));
+  const t = h('table', 'margin:10px;border-collapse:collapse'), tb = h('tbody'); ap(t, tb);
+  const grp = combo('', ['2ЛП Сеть', '2ЛП Серверы', 'Выездная поддержка', 'Поставщик'], null, {width: 240});
+  const txt = h('textarea', 'width:380px;height:80px;border:1px solid #b5b8c8;font:12px Arial');
+  const row = (l, f) => ap(tb, ap(h('tr'), h('td', 'padding:4px;color:#15428b;vertical-align:top', l), ap(h('td', 'padding:4px'), f)));
+  row('Группа исполнителей:', grp); row('Описание задания:', txt);
+  const err = h('div', 'color:#c00;margin:0 10px;min-height:16px');
+  const btns = h('div', 'text-align:right;padding:8px;border-top:1px solid #ddd');
+  ap(btns,
+    extBtn('Сохранить задание', () => {
+      if (!grp.input.value || !txt.value.trim()) { err.textContent = 'Заполните обязательные поля'; return; }
+      const d = db(), i = d.incidents.find(x => x.num === num);
+      const tnum = 'TSK' + (2001 + d.tasks.length);
+      d.tasks.push({num: tnum, inc: num, group: grp.input.value, text: txt.value});
+      i.tasks.push(tnum); log('task ' + num + ' ' + tnum);
+      parent.closeTaskFrame(true);
+    }),
+    extBtn('Отмена', () => parent.closeTaskFrame(false)));
+  ap(document.body, t, err, btns);
+}, 300 + Math.random() * 300);
+</script>
+</body>
+</html>

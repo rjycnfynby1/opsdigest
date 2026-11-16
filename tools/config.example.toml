@@ -1,0 +1,180 @@
+# OpsDigest — ручная настройка для командной строки (обычно не нужна: настройки задаются в окне OpsDigest
+# и хранятся в config.json рабочей папки). Чтобы использовать: скопируйте как config.toml в корень программы.
+# Секреты (ключи Telegram, токены, прокси) — в файле .env, здесь на них ссылки вида "${ИМЯ}".
+# Формат — TOML: строки в кавычках, списки в [ ], повторяющиеся блоки — [[...]].
+
+# ---------------------------------------------------------------- профиль
+[profile]
+name = "Иван Иванов"
+role = "Специалист"
+# варианты имени, по которым модель может распознать обращение к вам
+aliases = ["Иван", "Ваня"]
+responsibilities = """
+Опишите здесь рабочие темы и обязанности, которые помогут сделать сводки полезнее.
+"""
+# что пропускать
+ignore_topics = ["поздравления", "обеды", "мемы"]
+
+# Темы, важные для сводок. Добавляйте блоки [[profile.competences]].
+[[profile.competences]]
+name = "Обработка обращений"
+description = "новые запросы, сроки ответа, передача ответственным"
+keywords = ["обращение", "запрос", "срок", "ответственный"]
+
+[[profile.competences]]
+name = "Эксплуатация сервисов"
+description = "доступность, ошибки и восстановление работы"
+keywords = ["ошибка", "доступность", "инцидент", "восстановление"]
+
+[[profile.competences]]
+name = "Работа с коллегами"
+description = "уточнения, договорённости и передача задач"
+keywords = ["коллега", "уточнить", "передача", "задача"]
+
+# ---------------------------------------------------------------- Telegram
+[telegram]
+api_id = "${TG_API_ID}"        # my.telegram.org → API development tools
+api_hash = "${TG_API_HASH}"
+phone = "${TG_PHONE}"          # +79991234567
+session = "data/telegram"      # файл сессии = доступ к аккаунту, никому не передавать
+
+# Прокси (Telegram заблокирован): можно несколько. При подключении пробуются по очереди (последний рабочий — первым);
+# если связь через текущий оборвётся во время работы — автоматическое переключение на следующий и повтор шага.
+# Удобнее задать в .env: TG_PROXY=tg://proxy?server=...&port=...&secret=...
+# Форматы: tg://proxy?…  https://t.me/proxy?…  (MTProxy), tg://socks?…  socks5://user:pass@host:port  http://host:port
+proxies = []
+try_direct = false             # true — если ни один прокси не подошёл, попробовать напрямую
+connect_timeout = 15             # сколько секунд ждать ответа одного прокси, прежде чем перейти к следующему
+# faketls_hello = "new"          # прокси ee…: "new" — приветствие как у Telegram Desktop 2026; "old" — старое 517 байт
+                                 # (только если «Проверить связь» прямо советует «old»)
+
+# Экспериментально: бот, который выдаёт прокси (команда proxy-refresh). Ссылки из ответа сохраняются в data/proxies.txt
+proxy_bot = ""                 # например "@example_proxy_bot"
+proxy_bot_command = "/start"
+
+first_sync_days = 2            # сколько дней забрать при первом запуске
+max_messages_per_chat = 400    # лимит за одну синхронизацию на чат
+include_archived = false
+skip_muted = false             # true — заглушённые чаты пропускать (если для них нет явного правила ниже)
+
+# Приоритеты по умолчанию: high | normal | low | ignore
+[telegram.defaults]
+private = "high"
+group = "normal"
+channel = "low"
+bot = "ignore"
+
+# Правила для конкретных чатов. match: подстрока названия, "@username", числовой id или "re:регулярка".
+# kind: chat (обычный) | incident (аварийный чат) | alerts (канал алертов).
+# description — описание чата для модели: ваша роль, за чем следить, что не важно (окно пишет его в разделе «Чаты»).
+# exclude = true — чат не попадает в сводки, поиск и выгрузку истории (то же, что priority = "ignore").
+# Список чатов с id: chats.bat → data/chats.csv
+[[telegram.chats]]
+match = "Авария"
+priority = "high"
+kind = "incident"
+description = "Следить за статусом инцидента, ожидаемыми действиями и сроками."
+
+[[telegram.chats]]
+match = "re:(?i)мониторинг|алерт|alert|zabbix|grafana"
+priority = "normal"
+kind = "alerts"
+
+[[telegram.chats]]
+match = "болталка"
+priority = "ignore"
+
+# ---------------------------------------------------------------- модель (LLM)
+[llm]
+provider = "local"             # какой профиль использовать по умолчанию; разово: --provider claude
+
+# Локальная модель в LM Studio / Bionic (OpenAI-совместимый сервер). model = "auto" — первая загруженная.
+[llm.profiles.local]
+type = "openai"
+base_url = "http://localhost:1235/v1"
+api_key = "lm-studio"
+model = "auto"
+prefer = "instruct"            # при auto предпочесть модель, в названии которой это слово
+max_context_tokens = 32768
+timeout = 900
+
+# Ollama
+[llm.profiles.ollama]
+type = "openai"
+base_url = "http://localhost:11434/v1"
+api_key = "ollama"
+model = "qwen3:30b-a3b"
+max_context_tokens = 32768
+
+# Корпоративный агент Maverick (Agent Core API): POST <адрес>/api/v1/query, ключ в X-API-Key, ответ — response_text.
+# Ключ: веб-интерфейс Maverick → «API-ключи» → «Создать ключ».
+[llm.profiles.maverick]
+type = "maverick"
+url = "${MAVERICK_URL}"          # адрес сайта, например https://maverick.company.ru
+api_key = "${MAVERICK_TOKEN}"    # sk_…
+max_context_tokens = 32768
+timeout = 600
+external = false               # данные не покидают компанию
+
+# Claude API (ключ console.anthropic.com). Данные уходят во внешний сервис — для рабочих чатов осторожно.
+[llm.profiles.claude]
+type = "anthropic"
+api_key = "${ANTHROPIC_API_KEY}"
+model = "claude-sonnet-5-5"    # дешевле: claude-haiku-5-5
+max_context_tokens = 200000
+external = true
+
+# Claude Code по подписке, без API-ключа: промпт уходит в `claude -p`
+[llm.profiles.claude_code]
+type = "command"
+command = "claude -p --output-format text"
+timeout = 900
+external = true
+
+# ---------------------------------------------------------------- сводка
+[digest]
+timezone = "local"             # или "Europe/Samara" (на Windows нужен pip install tzdata), или "UTC+4"
+output_dir = "reports"
+top_actions = 10               # сколько пунктов «нужна реакция»
+max_messages_per_chat = 600    # в одну сводку из одного чата — последние N
+chunk_chars = 0                # размер порции переписки на запрос; 0 — авто по контексту модели
+max_output_tokens = 4096
+send_to_saved = false          # true — всегда отправлять сводку в «Избранное» (иначе флаг --send)
+
+# ---------------------------------------------------------------- вложения и изображения
+# Изображения и лёгкие файлы скачиваются в папку media/ рабочей папки, тяжёлые — только ссылка (докачка: fetch m123).
+# Описание каждой картинки лежит рядом с ней (<файл>.md) и в базе — одинаковая картинка описывается один раз.
+[media]
+download = true
+photo_max_px = 1280            # какой размер фото брать
+image_max_mb = 10              # изображения, отправленные файлом
+light_max_mb = 3               # документы до этого размера скачиваются, крупнее — ссылка
+vision_provider = ""           # профиль модели для изображений; пусто — тот же, что для сводок
+describe_workers = 2           # сколько изображений описывать одновременно
+describe_in_digest = true      # новые изображения периода описываются перед каждой сводкой
+auto_describe_max = 8          # сколько картинок модель может решить прочитать при ответе на вопрос
+fetch_max_mb = 200             # больше этого по запросу не докачивается
+# Для локальной модели: vision_model = "qwen2.5-vl-7b-instruct" в [llm.profiles.local] — модель для картинок.
+# Для Maverick формат передачи картинок определяется сам (команда vision-check) и сохраняется как image_mode.
+
+# ---------------------------------------------------------------- номера инцидентов и задач
+# Регулярки под ваши системы: ITSM, трекер. По ним связываются упоминания между чатами (и позже — с ITSM/трекером).
+[entities.patterns]
+incident = '\b(?:INC|IM|SD|RITM|REQ)[-_]?\d{5,}\b'
+change = '\bCHG[-_]?\d{5,}\b'
+problem = '\bPRB[-_]?\d{5,}\b'
+task = '\b[A-Z][A-Z0-9]{1,9}-\d{1,6}\b'
+
+# ---------------------------------------------------------------- приватность
+# Замены в тексте перед отправкой во ВНЕШНИЕ модели (профили с external = true).
+[[privacy.redact]]
+pattern = '\+?\d[\d\-\s()]{9,}\d'
+replace = "[телефон]"
+
+[[privacy.redact]]
+pattern = '[\w.+-]+@[\w-]+\.[\w.]+'
+replace = "[email]"
+
+[[privacy.redact]]
+pattern = '\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b'
+replace = "[карта]"

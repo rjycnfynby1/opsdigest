@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><script src="common.js"></script></head>
+<body style="margin:0;font:12px Arial,sans-serif">
+<script>
+let current = 'list', listPanel = null;
+const cards = {};   // num -> iframe
+const tabs = h('div', 'height:26px;background:#dfe8f6;border-bottom:1px solid #99bbe8;display:flex');
+const area = h('div', 'position:absolute;top:27px;left:0;right:0;bottom:0');
+ap(document.body, tabs, area);
+
+function tab(text, fn, active) {
+  return h('div', 'padding:5px 12px;cursor:pointer;border-right:1px solid #99bbe8;' + (active ? 'background:#fff;font-weight:bold' : ''), text, {onclick: fn});
+}
+function renderTabs() {
+  tabs.innerHTML = '';
+  ap(tabs, tab('Список инцидентов', showList, current === 'list'));
+  Object.keys(cards).forEach(n => ap(tabs, tab(n, () => openCard(n), current === n)));
+}
+function showList() {
+  current = 'list';
+  Object.values(cards).forEach(f => f.style.display = 'none');   // карточки остаются в DOM, но скрыты
+  renderList(); renderTabs();
+}
+function renderList() {
+  if (listPanel) listPanel.remove();
+  listPanel = h('div', 'padding:6px');
+  const tb = h('div', 'margin-bottom:4px');
+  ap(tb, extBtn('Обновить список', renderList, {icon: '↻'}));
+  const cols = [['Номер', 90], ['Статус', 130], ['Приоритет', 90], ['Краткое описание', 300], ['Срок решения', 130]];
+  const grid = h('div', 'border:1px solid #99bbe8;display:inline-block');
+  const head = h('div', 'display:flex;background:#eef3fb;border-bottom:1px solid #99bbe8');
+  cols.forEach(([n, w]) => ap(head, h('div', `width:${w}px;padding:4px;font-weight:bold;border-right:1px solid #ccd`, n)));
+  ap(grid, head);
+  db().incidents.forEach(i => {
+    const r = h('div', 'display:flex;border-bottom:1px solid #eee;cursor:pointer', null, {onclick: () => openCard(i.num)});
+    [i.num, i.status, i.prio, i.title, i.sla].forEach((v, k) =>
+      ap(r, ap(h('div', `width:${cols[k][1]}px;padding:4px;overflow:hidden;white-space:nowrap`), h('span', null, v))));
+    ap(grid, r);
+  });
+  ap(grid, h('div', 'padding:4px;color:#888;font-size:11px', 'Всего: ' + db().incidents.length));
+  ap(listPanel, tb, grid);
+  // список появляется не сразу — как после запроса к серверу
+  listPanel.style.visibility = 'hidden';
+  ap(area, listPanel);
+  setTimeout(() => { if (listPanel) listPanel.style.visibility = ''; }, 200 + Math.random() * 400);
+}
+function openCard(num) {
+  current = num;
+  if (listPanel) { listPanel.remove(); listPanel = null; }
+  Object.values(cards).forEach(f => f.style.display = 'none');
+  if (!cards[num]) {
+    cards[num] = h('iframe', 'border:0;width:100%;height:100%', null,
+      {name: 'c' + Math.random().toString(36).slice(2, 9), src: 'card.html?num=' + num + '&_=' + Date.now()});
+    ap(area, cards[num]);
+  } else cards[num].style.display = '';
+  renderTabs();
+}
+window.closeCard = (num) => { if (cards[num]) { cards[num].remove(); delete cards[num]; } showList(); };
+setTimeout(showList, 150 + Math.random() * 300);
+</script>
+</body>
+</html>
